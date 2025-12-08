@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affiliate Manager - Mudalali Mama</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <script>
+        tailwind.config = { theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'ai-purple': '#8b5cf6' } } } }
+    </script>
+    <style>
+        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .bank-card { background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-left: 5px solid #3a6a4a; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Affiliate Partners</h1>
+                <p class="text-sm text-gray-500 mt-1"><i class="fa fa-users text-mudalali-green"></i> Manage Influencers & Payouts</p>
+            </div>
+            
+            <div class="flex gap-3 w-full md:w-auto">
+                <button onclick="downloadAllDueReport()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700 shadow-md flex items-center gap-2 whitespace-nowrap transition transform hover:scale-105">
+                    <i class="fa fa-file-pdf"></i> Download Due List
+                </button>
+
+                <div class="relative w-64">
+                    <input type="text" id="search-affiliate" class="w-full py-2 pl-10 pr-4 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-mudalali-green outline-none" placeholder="Search Name, Code...">
+                    <i class="fa fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-gray-400 text-xs font-bold uppercase">Total Partners</p>
+                <h2 class="text-3xl font-bold text-gray-800 mt-1" id="stat-total">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-yellow-500">
+                <p class="text-gray-400 text-xs font-bold uppercase">Pending Requests</p>
+                <h2 class="text-3xl font-bold text-yellow-600 mt-1" id="stat-pending">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-500">
+                <p class="text-gray-400 text-xs font-bold uppercase">Total Unpaid Due</p>
+                <h2 class="text-3xl font-bold text-red-600 mt-1" id="stat-due">Rs. 0.00</h2>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 min-h-[400px]">
+            <div class="p-4 border-b bg-gray-50 flex gap-4">
+                <button onclick="filterList('all')" class="text-xs font-bold px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">All</button>
+                <button onclick="filterList('active')" class="text-xs font-bold px-3 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200">Active</button>
+                <button onclick="filterList('pending')" class="text-xs font-bold px-3 py-1 rounded bg-yellow-100 text-yellow-700 hover:bg-yellow-200">Pending</button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-white text-gray-700 uppercase text-xs font-bold border-b sticky top-0">
+                        <tr>
+                            <th class="p-4">Affiliate Info</th>
+                            <th class="p-4">Promo Code</th>
+                            <th class="p-4">Stats</th>
+                            <th class="p-4 text-right">Wallet (Due)</th>
+                            <th class="p-4 text-center">Status</th>
+                            <th class="p-4 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="affiliates-table-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="p-8 text-center"><i class="fa fa-spinner fa-spin text-2xl text-mudalali-green"></i></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="approve-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden m-4">
+            <div class="bg-gray-800 p-4 text-white flex justify-between items-center">
+                <h3 class="font-bold text-lg">Approve Partner</h3>
+                <button onclick="closeModal('approve-modal')" class="text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4">Assign a unique promo code for <span id="approve-name" class="font-bold text-gray-800">User</span>.</p>
+                <div class="flex gap-2">
+                    <input type="text" id="new-promo-code" class="w-full border p-2 rounded text-lg font-bold uppercase tracking-widest text-center" placeholder="CODE10">
+                    <button onclick="generateCode()" class="bg-gray-200 px-3 rounded hover:bg-gray-300" title="Auto Generate"><i class="fa fa-magic"></i></button>
+                </div>
+                <button onclick="confirmApproval()" class="w-full mt-6 bg-green-600 text-white font-bold py-2 rounded hover:bg-green-700 shadow-md">Activate Account</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="details-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden m-4 transform transition-all scale-100">
+            <div class="bg-mudalali-green p-4 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-lg" id="detail-name">Affiliate Name</h3>
+                    <p class="text-xs opacity-80" id="detail-email">email@example.com</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="downloadSingleStatement()" class="bg-white text-mudalali-green px-3 py-1.5 rounded text-xs font-bold shadow hover:bg-gray-100 flex items-center gap-2">
+                        <i class="fa fa-file-pdf"></i> Individual Invoice
+                    </button>
+                    <button onclick="closeModal('details-modal')" class="text-white hover:text-gray-300 text-2xl">&times;</button>
+                </div>
+            </div>
+
+            <div class="p-6 overflow-y-auto max-h-[80vh]">
+                
+                <div class="flex gap-4 mb-6">
+                    <div class="w-1/2 bg-green-50 p-4 rounded-lg border border-green-100 text-center">
+                        <p class="text-xs text-green-600 font-bold uppercase">Due Amount</p>
+                        <h2 class="text-2xl font-bold text-green-700 mt-1" id="detail-balance">Rs. 0.00</h2>
+                    </div>
+                    <div class="w-1/2 bg-blue-50 p-4 rounded-lg border border-blue-100 text-center">
+                        <p class="text-xs text-blue-600 font-bold uppercase">Total Earnings</p>
+                        <h2 class="text-xl font-bold text-blue-700 mt-1" id="detail-sales">Rs. 0.00</h2>
+                    </div>
+                </div>
+
+                <h4 class="font-bold text-gray-700 mb-3 text-sm flex items-center"><i class="fa fa-university mr-2"></i> Bank Details</h4>
+                <div class="bank-card p-4 rounded-lg mb-6 shadow-sm relative">
+                    <div id="bank-info-content"></div>
+                </div>
+
+                <div class="border-t pt-4">
+                    <h4 class="font-bold text-gray-700 mb-3 text-sm">Process Payment</h4>
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <div class="mb-3">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Amount (LKR)</label>
+                            <input type="number" id="pay-amount" class="w-full border p-2 rounded font-bold text-right">
+                        </div>
+                        <div class="mb-3">
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Reference ID</label>
+                            <input type="text" id="pay-ref" class="w-full border p-2 rounded text-sm" placeholder="Bank Transfer Ref...">
+                        </div>
+                        <button onclick="processPayout()" id="btn-pay" class="w-full bg-mudalali-green text-white font-bold py-2 rounded-lg hover:bg-green-800 shadow-md">
+                            <i class="fa fa-check-circle mr-1"></i> Confirm Payment
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-single-container" style="position: fixed; left: -9999px; top: 0;">
+        <div id="printable-single" class="bg-white p-10 w-[800px] text-gray-800 font-sans border border-gray-300">
+            <div class="flex justify-between items-center border-b pb-6 mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-green-800 uppercase">Payment Voucher</h1>
+                    <p class="text-sm text-gray-500">Mudalali Mama Affiliate Program</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-lg font-bold" id="pdf-single-date">2024-01-01</p>
+                </div>
+            </div>
+            <div class="mb-8 bg-gray-50 p-6 rounded-lg border border-gray-200 grid grid-cols-2 gap-4">
+                <div><p class="text-xs text-gray-500">Name:</p><p class="font-bold text-lg" id="pdf-single-name">Name</p></div>
+                <div><p class="text-xs text-gray-500">Code:</p><p class="font-bold text-lg font-mono" id="pdf-single-code">CODE</p></div>
+            </div>
+            <div class="mb-8 border-2 border-green-600 rounded-lg p-6 grid grid-cols-2 gap-6">
+                <div class="col-span-2 text-center text-green-700 font-bold uppercase text-sm border-b pb-2 mb-2">Transfer Details</div>
+                <div><p class="text-xs text-gray-500 uppercase font-bold">Bank</p><p class="text-xl font-bold" id="pdf-single-bank">Bank</p></div>
+                <div><p class="text-xs text-gray-500 uppercase font-bold">Branch</p><p class="text-xl font-bold" id="pdf-single-branch">Branch</p></div>
+                <div class="col-span-2"><p class="text-xs text-gray-500 uppercase font-bold">Account No</p><p class="text-3xl font-mono font-bold" id="pdf-single-acc">0000</p></div>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-bold text-gray-500 uppercase">Payable Amount</p>
+                <div class="text-4xl font-bold text-green-700" id="pdf-single-amount">Rs. 0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-bulk-container" style="position: fixed; left: -9999px; top: 0;">
+        <div id="printable-bulk-list" class="bg-white p-8 w-[1000px] text-gray-800 font-sans">
+            <div class="text-center border-b pb-4 mb-4">
+                <h1 class="text-3xl font-bold uppercase text-gray-800">Pending Affiliate Payouts</h1>
+                <p class="text-sm text-gray-500">List of partners with due commissions - Generated on <span id="bulk-date"></span></p>
+            </div>
+            <table class="w-full text-sm text-left border-collapse border border-gray-300">
+                <thead class="bg-gray-100 uppercase text-xs font-bold text-gray-700">
+                    <tr>
+                        <th class="border border-gray-300 p-3">Affiliate Name</th>
+                        <th class="border border-gray-300 p-3">Bank Name</th>
+                        <th class="border border-gray-300 p-3">Branch</th>
+                        <th class="border border-gray-300 p-3">Account Number</th>
+                        <th class="border border-gray-300 p-3 text-right">Amount (LKR)</th>
+                    </tr>
+                </thead>
+                <tbody id="bulk-tbody"></tbody>
+                <tfoot>
+                    <tr class="bg-gray-100 font-bold text-gray-800">
+                        <td colspan="4" class="border border-gray-300 p-3 text-right text-base">TOTAL PAYABLE:</td>
+                        <td class="border border-gray-300 p-3 text-right text-xl" id="bulk-total"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { renderSidebar, checkAdminAuth, db, formatLKR, showToast } from "./common.js";
+        import { collection, onSnapshot, query, where, updateDoc, doc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('affiliates');
+
+        let allAffiliates = [];
+        let selectedUser = null;
+
+        // --- 1. Load Data ---
+        function initAffiliates() {
+            const q = query(collection(db, 'users'), where("wantsToBeAffiliate", "==", true));
+            onSnapshot(q, (snap) => {
+                allAffiliates = [];
+                let pendingCount = 0;
+                let totalDue = 0;
+                snap.forEach(doc => {
+                    const d = { id: doc.id, ...doc.data() };
+                    allAffiliates.push(d);
+                    if (!d.isAffiliate) pendingCount++;
+                    if (d.affiliateWallet) totalDue += (d.affiliateWallet || 0);
+                });
+                document.getElementById('stat-total').textContent = allAffiliates.length;
+                document.getElementById('stat-pending').textContent = pendingCount;
+                document.getElementById('stat-due').textContent = formatLKR(totalDue);
+                renderTable(allAffiliates);
+            });
+        }
+
+        function renderTable(users) {
+            const tbody = document.getElementById('affiliates-table-body');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-gray-400">No records found.</td></tr>'; return;
+            }
+            tbody.innerHTML = users.map(u => {
+                const isActive = u.isAffiliate;
+                return `
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500 overflow-hidden">
+                                    ${u.photoUrl ? `<img src="${u.photoUrl}" class="w-full h-full object-cover">` : u.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-gray-800 text-sm hover:text-blue-600 cursor-pointer" onclick="openDetails('${u.id}')">${u.name}</p>
+                                    <p class="text-xs text-gray-500">${u.email}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4 font-mono font-bold text-gray-700 text-xs">${u.affiliateCode || '-'}</td>
+                        <td class="p-4 text-xs">
+                            <div class="font-bold text-gray-700">${u.affiliateStats?.orderCount || 0} Orders</div>
+                        </td>
+                        <td class="p-4 text-right font-bold ${u.affiliateWallet > 0 ? 'text-red-600' : 'text-green-600'} text-sm">
+                            ${formatLKR(u.affiliateWallet || 0)}
+                        </td>
+                        <td class="p-4 text-center">
+                             ${isActive ? '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold">Active</span>' : '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-[10px] font-bold">Pending</span>'}
+                        </td>
+                        <td class="p-4 text-center">
+                            ${!isActive 
+                                ? `<button onclick="openApproveModal('${u.id}', '${u.name}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold">Approve</button>`
+                                : `<button onclick="openDetails('${u.id}')" class="text-blue-600 bg-blue-50 px-3 py-1 rounded text-xs font-bold"><i class="fa fa-eye"></i> View</button>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- 2. Bulk Download Logic (New Feature) ---
+        window.downloadAllDueReport = () => {
+            const dueList = allAffiliates.filter(u => (u.affiliateWallet || 0) > 0);
+            
+            if(dueList.length === 0) {
+                return showToast('No pending payments found!', 'info');
+            }
+
+            const tbody = document.getElementById('bulk-tbody');
+            tbody.innerHTML = '';
+            let total = 0;
+
+            dueList.forEach(u => {
+                const b = u.bankDetails || {};
+                total += (u.affiliateWallet || 0);
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="border border-gray-300 p-2 font-bold text-gray-700">${u.name} (${u.affiliateCode || '-'})</td>
+                        <td class="border border-gray-300 p-2">${b.bankName || '<span class="text-red-500">Missing</span>'}</td>
+                        <td class="border border-gray-300 p-2">${b.branch || '-'}</td>
+                        <td class="border border-gray-300 p-2 font-mono font-bold">${b.accountNumber || '-'}</td>
+                        <td class="border border-gray-300 p-2 text-right font-bold text-gray-800">${formatLKR(u.affiliateWallet)}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('bulk-date').textContent = new Date().toLocaleString();
+            document.getElementById('bulk-total').textContent = formatLKR(total);
+
+            const element = document.getElementById('printable-bulk-list');
+            const opt = {
+                margin: 0.5,
+                filename: `Affiliate_Payout_List_${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().set(opt).from(element).save();
+        };
+
+        // --- 3. Single Download & Modal Logic ---
+        window.openApproveModal = (uid, name) => {
+            selectedUser = allAffiliates.find(u => u.id === uid);
+            document.getElementById('approve-modal').classList.remove('hidden');
+            document.getElementById('approve-name').textContent = name;
+            window.generateCode();
+        };
+
+        window.generateCode = () => {
+             const random = Math.floor(Math.random() * 1000);
+             const prefix = selectedUser ? selectedUser.name.split(' ')[0].toUpperCase() : "PROMO";
+             document.getElementById('new-promo-code').value = (prefix + random).replace(/[^A-Z0-9]/g, '');
+        };
+
+        window.confirmApproval = async () => {
+            const code = document.getElementById('new-promo-code').value.toUpperCase();
+            if(!code) return showToast('Enter Code', 'warning');
+            try {
+                await updateDoc(doc(db, 'users', selectedUser.id), {
+                    isAffiliate: true, affiliateCode: code, affiliateWallet: 0,
+                    affiliateStats: { totalSales: 0, orderCount: 0 }, approvedAt: serverTimestamp()
+                });
+                showToast('Approved!', 'success'); window.closeModal('approve-modal');
+            } catch(e) { showToast('Error', 'error'); }
+        };
+
+        window.openDetails = (uid) => {
+            selectedUser = allAffiliates.find(u => u.id === uid);
+            if(!selectedUser) return;
+            document.getElementById('details-modal').classList.remove('hidden');
+            
+            document.getElementById('detail-name').textContent = selectedUser.name;
+            document.getElementById('detail-email').textContent = selectedUser.email;
+            document.getElementById('detail-balance').textContent = formatLKR(selectedUser.affiliateWallet || 0);
+            document.getElementById('detail-sales').textContent = formatLKR(selectedUser.affiliateStats?.totalSales || 0);
+            document.getElementById('pay-amount').value = selectedUser.affiliateWallet || 0;
+
+            const b = selectedUser.bankDetails || {};
+            const bankHtml = b.accountNumber ? `
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div><p class="text-xs text-gray-500 uppercase">Bank</p><p class="font-bold">${b.bankName}</p></div>
+                    <div><p class="text-xs text-gray-500 uppercase">Branch</p><p class="font-bold">${b.branch}</p></div>
+                    <div class="col-span-2 mt-2 pt-2 border-t"><p class="text-xs text-gray-500 uppercase">Account No</p><p class="font-mono font-bold text-xl text-mudalali-green">${b.accountNumber}</p><p class="text-xs text-gray-500">Holder: ${b.accountName}</p></div>
+                </div>` : `<p class="text-center text-red-500 font-bold">Bank details not provided</p>`;
+            document.getElementById('bank-info-content').innerHTML = bankHtml;
+
+            // Single PDF Prep
+            document.getElementById('pdf-single-date').textContent = new Date().toLocaleDateString();
+            document.getElementById('pdf-single-name').textContent = selectedUser.name;
+            document.getElementById('pdf-single-code').textContent = selectedUser.affiliateCode || '-';
+            document.getElementById('pdf-single-bank').textContent = b.bankName || 'N/A';
+            document.getElementById('pdf-single-branch').textContent = b.branch || 'N/A';
+            document.getElementById('pdf-single-acc').textContent = b.accountNumber || 'N/A';
+            document.getElementById('pdf-single-amount').textContent = formatLKR(selectedUser.affiliateWallet || 0);
+        };
+
+        window.downloadSingleStatement = () => {
+            const element = document.getElementById('printable-single');
+            const opt = { margin: 0.5, filename: `Voucher_${selectedUser.name}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a5', orientation: 'landscape' } };
+            html2pdf().set(opt).from(element).save();
+        };
+
+        window.processPayout = async () => {
+            const amount = parseFloat(document.getElementById('pay-amount').value);
+            const ref = document.getElementById('pay-ref').value;
+            if (!amount || !ref) return showToast('Invalid details', 'warning');
+            try {
+                await updateDoc(doc(db, 'users', selectedUser.id), {
+                    affiliateWallet: (selectedUser.affiliateWallet || 0) - amount,
+                    lastPayoutAt: serverTimestamp()
+                });
+                await addDoc(collection(db, 'payouts'), {
+                    sellerUid: selectedUser.id, isAffiliatePayout: true, amount, refId: ref, paidAt: serverTimestamp()
+                });
+                showToast('Payout Recorded!', 'success'); window.closeModal('details-modal');
+            } catch(e) { showToast('Error', 'error'); }
+        };
+
+        window.filterList = (type) => {
+            let filtered = allAffiliates;
+            if (type === 'active') filtered = allAffiliates.filter(u => u.isAffiliate);
+            if (type === 'pending') filtered = allAffiliates.filter(u => !u.isAffiliate);
+            renderTable(filtered);
+        };
+
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+        document.getElementById('search-affiliate').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            renderTable(allAffiliates.filter(u => u.name.toLowerCase().includes(term)));
+        });
+
+        initAffiliates();
+    </script>
+</body>
+</html>

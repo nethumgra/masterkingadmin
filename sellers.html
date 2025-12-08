@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Management - Mudalali Mama</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'ai-blue': '#2563eb', 'risk-red': '#dc2626', 'magic-purple': '#9333ea' } } }
+        }
+    </script>
+    <style>
+        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .scanner-line {
+            position: absolute; width: 100%; height: 4px; background: #00ff00;
+            box-shadow: 0 0 15px #00ff00; animation: scan 2s infinite linear;
+            top: 0; display: none;
+        }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+        .score-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; }
+        .magic-btn {
+            background: linear-gradient(45deg, #6366f1, #a855f7, #ec4899);
+            background-size: 200% 200%;
+            animation: gradient-xy 3s ease infinite;
+        }
+        @keyframes gradient-xy { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+        /* 🧠 AI Writing Animation */
+        .ai-writing-active {
+            background: linear-gradient(90deg, #f3e8ff, #e0e7ff, #f3e8ff);
+            background-size: 200% 100%;
+            animation: aiWrite 1.5s infinite linear;
+            border-color: #9333ea !important;
+            color: #4c1d95;
+        }
+        @keyframes aiWrite { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+        
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Seller Command Center</h1>
+                <p class="text-sm text-gray-500">Manage Vendors (Optimized & Multi-Model AI 🚀)</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="filterSellers('pending')" class="bg-yellow-500 text-white px-4 py-2 rounded-lg font-bold shadow hover:bg-yellow-600 transition">
+                    <i class="fa fa-clock"></i> Pending Approval
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-gray-500 text-xs font-bold uppercase">Total Sellers (DB)</p>
+                <h2 class="text-3xl font-bold mt-1" id="count-total-db">Loading...</h2>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
+                <p class="text-gray-500 text-xs font-bold uppercase">Loaded in View</p>
+                <h2 class="text-3xl font-bold mt-1 text-green-600" id="count-loaded">0</h2>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
+                <p class="text-gray-500 text-xs font-bold uppercase">Pending / Risk</p>
+                <h2 class="text-3xl font-bold mt-1 text-red-600" id="count-risk">0</h2>
+            </div>
+        </div>
+
+        <!-- Filters & Search -->
+        <div class="bg-white p-4 rounded-t-xl border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="relative w-full md:w-96">
+                <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
+                <input type="text" id="search-input" class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-mudalali-green outline-none" placeholder="Search loaded sellers...">
+            </div>
+            <select id="status-filter" class="p-2 border rounded-lg bg-gray-50 outline-none">
+                <option value="all">All Status</option>
+                <option value="active">Active ✅</option>
+                <option value="pending">Pending Approval ⏳</option>
+                <option value="suspended">Suspended ⛔</option>
+            </select>
+        </div>
+
+        <!-- Sellers Table -->
+        <div class="bg-white rounded-b-xl shadow-sm overflow-hidden">
+            <table class="w-full text-left text-sm text-gray-600">
+                <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-bold border-b">
+                    <tr>
+                        <th class="p-4">Seller Info</th>
+                        <th class="p-4">Store Details</th>
+                        <th class="p-4 text-center">Score</th>
+                        <th class="p-4 text-center">Status</th>
+                        <th class="p-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="sellers-table-body" class="divide-y divide-gray-100">
+                    <tr><td colspan="5" class="p-6 text-center text-gray-400"><i class="fa fa-spinner fa-spin"></i> Loading Sellers...</td></tr>
+                </tbody>
+            </table>
+            
+            <!-- Load More Button -->
+            <div class="p-4 border-t text-center bg-gray-50">
+                <button id="load-more-btn" onclick="loadMoreSellers()" class="bg-white border border-gray-300 text-gray-600 px-6 py-2 rounded-full font-bold text-sm hover:bg-gray-100 transition shadow-sm hidden flex items-center justify-center gap-2 mx-auto">
+                    Load Next 20 Sellers <i class="fa fa-chevron-down"></i>
+                </button>
+                <p id="end-of-list" class="text-xs text-gray-400 hidden mt-2">End of list.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ID Verification Modal -->
+    <div id="verify-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+            <!-- Left: Document Viewer -->
+            <div class="w-full md:w-1/2 bg-gray-900 p-4 flex flex-col items-center justify-center relative border-r border-gray-700">
+                <h3 class="text-white absolute top-4 left-4 font-bold bg-black bg-opacity-50 px-3 py-1 rounded text-sm border border-gray-600"><i class="fa fa-id-card mr-2"></i> Submitted ID/BR</h3>
+                <div class="relative group w-full h-full flex items-center justify-center overflow-hidden">
+                    <img id="verify-doc-img" src="" class="max-w-full max-h-full object-contain rounded shadow-lg border-2 border-gray-700 transition-transform duration-300">
+                    <div id="ai-scanner" class="scanner-line"></div>
+                    <div id="no-id-placeholder" class="hidden flex flex-col items-center text-gray-500">
+                        <i class="fa fa-image text-6xl mb-2"></i>
+                        <p>No ID Uploaded</p>
+                    </div>
+                </div>
+                <div class="absolute bottom-4 flex gap-2">
+                    <button onclick="rotateImage()" class="bg-gray-800 text-white p-2 rounded hover:bg-gray-700 border border-gray-600"><i class="fa fa-sync"></i> Rotate</button>
+                    <button onclick="runAIAnalysis()" class="bg-ai-blue text-white px-4 py-2 rounded hover:bg-blue-600 font-bold shadow-lg animate-pulse flex items-center gap-2"><i class="fa fa-magic"></i> AI Scan</button>
+                </div>
+            </div>
+            <!-- Right: Analysis Panel -->
+            <div class="w-full md:w-1/2 bg-white flex flex-col">
+                <div class="p-6 border-b bg-gray-50">
+                    <h2 class="text-2xl font-bold text-gray-800" id="verify-name">Seller Name</h2>
+                    <p class="text-sm text-gray-500" id="verify-email">email@example.com</p>
+                </div>
+                <div class="p-6 flex-grow overflow-y-auto space-y-6">
+                    <div id="ai-result-box" class="bg-purple-50 p-4 rounded-xl border border-purple-200 shadow-sm hidden animate-fade-in-up">
+                        <h4 class="text-xs font-bold text-purple-700 uppercase mb-2"><i class="fa fa-robot mr-1"></i> AI Analysis</h4>
+                        <div class="flex justify-between items-center mb-2"><span class="text-sm text-gray-600">Detected Text:</span><span class="font-bold text-gray-800 font-mono text-xs bg-white p-1 rounded border" id="ocr-detected-text">-</span></div>
+                        <div id="match-verdict" class="mt-3 text-center p-2 rounded-lg font-bold text-sm bg-white border">Analyzing...</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <h4 class="text-xs font-bold text-gray-400 uppercase mb-3">Verification Checklist</h4>
+                        <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100"><input type="checkbox" class="w-5 h-5 text-mudalali-green rounded"> <span class="text-sm font-medium text-gray-700">Photo is clear</span></label>
+                        <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="w-5 h-5 text-mudalali-green rounded"> <span class="text-sm font-medium text-gray-700">ID matches profile</span></label>
+                    </div>
+                    <div><label class="text-xs font-bold text-gray-500 uppercase">Notes / Rejection Reason</label><textarea id="verify-notes" class="w-full mt-1 p-3 border rounded-lg text-sm h-24 bg-gray-50"></textarea></div>
+                </div>
+                <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
+                    <button onclick="document.getElementById('verify-modal').classList.add('hidden')" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-lg">Cancel</button>
+                    <button onclick="updateSellerStatus('rejected')" class="px-5 py-2 bg-red-100 text-red-600 font-bold hover:bg-red-200 rounded-lg">Reject</button>
+                    <button onclick="updateSellerStatus('approved')" class="px-5 py-2 bg-mudalali-green text-white font-bold hover:bg-green-800 rounded-lg shadow-lg">Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🟢 STORE INSPECTOR MODAL -->
+    <div id="store-check-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-7xl h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            
+            <!-- Header (Clickable for Profile Edit) -->
+            <div class="bg-gray-900 p-4 flex justify-between items-center text-white shadow-lg z-20">
+                <div class="flex items-center gap-4 cursor-pointer hover:bg-gray-800 p-2 rounded-lg transition" onclick="openStoreProfileEditor()" title="Click to Edit Store Profile">
+                    <div class="relative">
+                        <!-- Logo will appear here only -->
+                        <img id="modal-store-img" class="w-12 h-12 rounded-full border-2 border-green-500 object-cover bg-gray-700" src="https://placehold.co/100?text=Shop" onerror="this.src='https://placehold.co/100?text=Shop'">
+                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full"></span>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold flex items-center gap-2" id="modal-store-name">Loading... <i class="fa fa-pencil-alt text-xs text-gray-500"></i></h2>
+                        <p class="text-xs text-gray-400 flex items-center gap-3">
+                            <span class="flex items-center gap-1"><i class="fa fa-map-marker-alt text-red-400"></i> <span id="modal-store-loc">...</span></span>
+                            <span class="flex items-center gap-1"><i class="fa fa-box text-blue-400"></i> <span id="modal-prod-count">0</span> Items</span>
+                        </p>
+                    </div>
+                </div>
+                <button onclick="closeStoreModal()" class="text-gray-400 hover:text-white text-2xl bg-gray-800 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center transition">&times;</button>
+            </div>
+
+            <div class="flex flex-grow overflow-hidden">
+                <!-- Left: Product List -->
+                <div class="w-1/4 bg-gray-50 border-r border-gray-200 flex flex-col">
+                    <div class="p-3 border-b bg-white shadow-sm z-10">
+                        <input type="text" id="prod-search" class="w-full pl-8 p-2 border rounded text-sm focus:ring-2 focus:ring-mudalali-green outline-none" placeholder="Find product...">
+                    </div>
+                    <div id="product-list-container" class="flex-grow overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                        <p class="text-center text-gray-500 mt-10"><i class="fa fa-spinner fa-spin"></i> Fetching...</p>
+                    </div>
+                </div>
+
+                <!-- Right: Product Editor & AI -->
+                <div class="w-3/4 bg-white flex flex-col relative">
+                    <div id="product-editor-empty" class="absolute inset-0 flex flex-col items-center justify-center text-gray-300">
+                        <i class="fa fa-hand-pointer text-6xl mb-4 opacity-50 animate-bounce"></i>
+                        <p class="font-bold">Select a product to Manage.</p>
+                    </div>
+
+                    <div id="product-editor-content" class="hidden flex flex-col h-full">
+                        <div class="flex-grow overflow-y-auto p-6 custom-scrollbar">
+                            <div class="flex gap-6">
+                                <!-- Image & AI -->
+                                <div class="w-1/3 flex flex-col gap-3">
+                                    <div class="aspect-[3/4] rounded-xl overflow-hidden border border-gray-200 bg-gray-100 relative group shadow-sm">
+                                        <img id="edit-prod-img" src="" class="w-full h-full object-cover">
+                                    </div>
+                                    <button onclick="magicFixProduct()" class="magic-btn w-full text-white font-bold py-3 px-4 rounded-xl shadow-lg flex flex-col items-center justify-center gap-1 transform transition hover:scale-105 active:scale-95 group">
+                                        <span class="flex items-center gap-2"><i class="fa fa-wand-magic-sparkles text-yellow-300 group-hover:rotate-12 transition"></i> AI Magic Fix</span>
+                                        <span class="text-[10px] opacity-90 font-normal">Scan Image for Data</span>
+                                    </button>
+                                    <input type="file" id="manual-ai-upload" class="hidden" accept="image/*" onchange="handleManualAIUpload(this)">
+                                    <button onclick="document.getElementById('manual-ai-upload').click()" id="manual-ai-btn" class="hidden w-full bg-gray-100 text-gray-600 font-bold py-2 rounded-lg border border-gray-300 hover:bg-gray-200 text-xs flex items-center justify-center gap-2">
+                                        <i class="fa fa-upload"></i> Upload Local Image for AI
+                                    </button>
+                                    <p id="ai-status" class="text-xs text-center font-bold h-4 transition-colors text-gray-400"></p>
+                                </div>
+
+                                <!-- Form -->
+                                <div class="w-2/3 space-y-4">
+                                    <div><label class="block text-xs font-bold text-gray-500">Product Name</label><input type="text" id="edit-prod-name" class="w-full p-2 border rounded-lg font-bold"></div>
+                                    <div class="grid grid-cols-3 gap-4">
+                                        <div><label class="block text-xs font-bold text-green-600">Sale Price</label><input type="number" id="edit-prod-price" class="w-full p-2 border border-green-300 bg-green-50 rounded-lg font-bold"></div>
+                                        <div><label class="block text-xs font-bold text-gray-500">Original Price</label><input type="number" id="edit-prod-orig-price" class="w-full p-2 border rounded-lg"></div>
+                                        <div><label class="block text-xs font-bold text-red-500">Min Price</label><input type="number" id="edit-prod-min-price" class="w-full p-2 border border-red-200 bg-red-50 rounded-lg"></div>
+                                    </div>
+                                    <div><label class="block text-xs font-bold text-gray-500">Category</label><input type="text" id="edit-prod-cat" class="w-full p-2 border rounded-lg"></div>
+                                    <div class="relative">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <label class="block text-xs font-bold text-gray-500">Description</label>
+                                            <button onclick="generateDescriptionOnly()" class="text-[10px] bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-bold hover:bg-purple-200 flex items-center gap-1 transition"><i class="fa fa-wand-magic-sparkles"></i> Auto-Write</button>
+                                        </div>
+                                        <textarea id="edit-prod-desc" rows="4" class="w-full p-3 border rounded-lg text-sm"></textarea>
+                                    </div>
+                                    <div class="flex justify-between gap-4">
+                                        <div class="flex items-center gap-2 p-3 bg-blue-50 rounded-lg w-1/2"><input type="checkbox" id="edit-prod-custom"><label>Enable Customization</label></div>
+                                        <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg w-1/2"><input type="checkbox" id="edit-prod-active"><label>Listing Active</label></div>
+                                    </div>
+                                    <div class="border-t pt-3">
+                                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Variations</label>
+                                        <div id="edit-prod-variations" class="space-y-2 max-h-40 overflow-y-auto pr-2"></div>
+                                        <button onclick="addVariationRowAdmin()" class="mt-2 text-xs text-purple-600 font-bold hover:underline">+ Add Variation</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
+                            <button onclick="deleteProduct()" class="text-red-500 font-bold text-sm"><i class="fa fa-trash"></i> Delete</button>
+                            <div class="flex gap-2">
+                                <button onclick="closeStoreModal()" class="text-gray-600 font-bold text-sm">Cancel</button>
+                                <button onclick="saveProductChanges()" id="save-prod-btn" class="bg-mudalali-green text-white px-6 py-2 rounded-lg font-bold shadow-md text-sm">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🆕 STORE PROFILE EDIT MODAL (Updated with Image Uploads) -->
+    <div id="store-edit-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl p-6 animate-fade-in-up max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-xl font-bold text-gray-800">Edit Store Profile</h3>
+                <button onclick="document.getElementById('store-edit-modal').classList.add('hidden')" class="text-gray-500 hover:text-red-500"><i class="fa fa-times text-xl"></i></button>
+            </div>
+            <div class="space-y-4">
+                <!-- Images Section -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Profile Icon</label>
+                        <div class="relative w-24 h-24 bg-gray-100 rounded-full overflow-hidden border mx-auto group cursor-pointer" onclick="document.getElementById('edit-store-icon-file').click()">
+                            <img id="edit-store-icon-preview" src="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100'">
+                            <div class="absolute inset-0 bg-black bg-opacity-30 hidden group-hover:flex items-center justify-center text-white text-xs"><i class="fa fa-camera"></i></div>
+                        </div>
+                        <input type="file" id="edit-store-icon-file" class="hidden" accept="image/*" onchange="previewImage(this, 'edit-store-icon-preview')">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Banner Image</label>
+                        <div class="relative w-full h-24 bg-gray-100 rounded-lg overflow-hidden border group cursor-pointer" onclick="document.getElementById('edit-store-banner-file').click()">
+                            <img id="edit-store-banner-preview" src="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x100'">
+                            <div class="absolute inset-0 bg-black bg-opacity-30 hidden group-hover:flex items-center justify-center text-white text-xs"><i class="fa fa-camera"></i></div>
+                        </div>
+                        <input type="file" id="edit-store-banner-file" class="hidden" accept="image/*" onchange="previewImage(this, 'edit-store-banner-preview')">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Store Name</label>
+                    <input type="text" id="edit-store-name" class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-mudalali-green">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-600 mb-1">Location</label>
+                    <input type="text" id="edit-store-loc" class="w-full border p-2 rounded-lg">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-sm font-bold text-gray-600">Store Description</label>
+                        <button onclick="generateStoreDescAI()" class="text-[10px] bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-bold hover:bg-purple-200 transition"><i class="fa fa-magic"></i> AI Write</button>
+                    </div>
+                    <textarea id="edit-store-desc" rows="3" class="w-full border p-2 rounded-lg text-sm"></textarea>
+                </div>
+                <button onclick="saveStoreProfile()" id="save-store-profile-btn" class="w-full bg-mudalali-green text-white py-2 rounded-lg font-bold hover:bg-green-800 shadow-md">Update Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { renderSidebar, checkAdminAuth, db } from "./common.js";
+        import { collection, query, where, doc, updateDoc, getDoc, getDocs, deleteDoc, limit, startAfter, orderBy, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('sellers');
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const publicDataPath = `/artifacts/${appId}/public/data`;
+        const imgbbApiKey = 'f068295c19803c448665a0ea48bcc2fc';
+        
+        let allSellers = []; 
+        let lastVisibleSeller = null; 
+        let sellerProducts = [];
+        let selectedSeller = null;
+        let selectedProduct = null;
+        let GEMINI_API_KEY = "";
+        let currentRotation = 0;
+        const storeDataCache = new Map(); 
+
+        const GEMINI_MODELS = ["gemini-2.5-flash-preview-09-2025", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro"];
+
+        async function loadSystemApiKey() {
+            try { const snap = await getDoc(doc(db, 'config', 'ai_keys')); if (snap.exists()) GEMINI_API_KEY = snap.data().geminiKey; } catch (e) {}
+        }
+        loadSystemApiKey();
+
+        async function callGeminiWithFallback(prompt, imageBase64 = null) {
+            if (!GEMINI_API_KEY) throw new Error("AI Key Missing");
+            let lastError = null;
+            for (const modelName of GEMINI_MODELS) {
+                try {
+                    const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                    if (imageBase64) payload.contents[0].parts.push({ inline_data: { mime_type: "image/jpeg", data: imageBase64 } });
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!res.ok) throw new Error(`Model ${modelName} failed`);
+                    const data = await res.json();
+                    if (data.candidates && data.candidates.length > 0) return data.candidates[0].content.parts[0].text;
+                } catch (e) { lastError = e; continue; }
+            }
+            throw lastError || new Error("All AI models failed.");
+        }
+
+        async function fetchTotalSellerCount() {
+            try { const q = query(collection(db, "users"), where("isSeller", "==", true)); const snapshot = await getCountFromServer(q); document.getElementById('count-total-db').textContent = snapshot.data().count; } catch(e) { document.getElementById('count-total-db').textContent = "N/A"; }
+        }
+
+        async function loadInitialSellers() {
+            const tbody = document.getElementById('sellers-table-body'); tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400"><i class="fa fa-spinner fa-spin"></i> Loading...</td></tr>';
+            allSellers = []; lastVisibleSeller = null;
+            const q = query(collection(db, "users"), where("isSeller", "==", true), orderBy("createdAt", "desc"), limit(20));
+            await executeSellerQuery(q, true); fetchTotalSellerCount();
+        }
+
+        async function loadMoreSellers() {
+            if (!lastVisibleSeller) return;
+            const btn = document.getElementById('load-more-btn'); btn.textContent = "Loading..."; btn.disabled = true;
+            const q = query(collection(db, "users"), where("isSeller", "==", true), orderBy("createdAt", "desc"), startAfter(lastVisibleSeller), limit(20));
+            await executeSellerQuery(q, false);
+            btn.innerHTML = 'Load Next 20 Sellers <i class="fa fa-chevron-down"></i>'; btn.disabled = false;
+        }
+
+        async function executeSellerQuery(q, isReset) {
+            try {
+                const snap = await getDocs(q);
+                if (snap.empty) {
+                    if (isReset) document.getElementById('sellers-table-body').innerHTML = '<tr><td colspan="5" class="p-8 text-center">No sellers found.</td></tr>';
+                    document.getElementById('load-more-btn').classList.add('hidden'); document.getElementById('end-of-list').classList.remove('hidden'); return;
+                }
+                lastVisibleSeller = snap.docs[snap.docs.length - 1];
+                const newSellers = await Promise.all(snap.docs.map(async (userDoc) => {
+                    const data = userDoc.data();
+                    let storeName = "No Store Created";
+                    if (storeDataCache.has(userDoc.id)) storeName = storeDataCache.get(userDoc.id).storeName;
+                    else {
+                        try { const storeDoc = await getDoc(doc(db, publicDataPath, 'stores', userDoc.id)); if (storeDoc.exists()) { const sData = storeDoc.data(); storeName = sData.storeName || "Unnamed Store"; storeDataCache.set(userDoc.id, sData); } } catch (e) {}
+                    }
+                    return { id: userDoc.id, ...data, storeName, score: Math.floor(Math.random() * 40) + 60 };
+                }));
+                if (isReset) allSellers = newSellers; else allSellers = [...allSellers, ...newSellers];
+                renderTable(allSellers); updateStats();
+                if (snap.docs.length < 20) { document.getElementById('load-more-btn').classList.add('hidden'); document.getElementById('end-of-list').classList.remove('hidden'); } 
+                else { document.getElementById('load-more-btn').classList.remove('hidden'); document.getElementById('end-of-list').classList.add('hidden'); }
+            } catch(e) { console.error(e); }
+        }
+
+        function renderTable(sellers) {
+            const tbody = document.getElementById('sellers-table-body');
+            const filter = document.getElementById('status-filter').value;
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const filtered = sellers.filter(s => {
+                const matchesStatus = filter === 'all' || s.sellerStatus === filter;
+                const matchesSearch = (s.name || '').toLowerCase().includes(search) || (s.storeName || '').toLowerCase().includes(search);
+                return matchesStatus && matchesSearch;
+            });
+            tbody.innerHTML = filtered.map(s => {
+                let statusBadge = s.sellerStatus === 'approved' ? `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Active</span>` :
+                                  (s.sellerStatus === 'rejected' ? `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Rejected</span>` : 
+                                  `<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">Pending</span>`);
+                return `
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="p-4">
+                            <div><p class="font-bold text-gray-800">${s.name}</p><p class="text-xs text-gray-500">${s.email}</p></div>
+                        </td>
+                        <td class="p-4"><p class="font-bold text-gray-700 text-sm">${s.storeName}</p><p class="text-xs text-gray-500">${s.phone || 'No Phone'}</p></td>
+                        <td class="p-4 text-center font-bold text-gray-600">${s.score}</td>
+                        <td class="p-4 text-center">${statusBadge}</td>
+                        <td class="p-4 text-center">
+                            <div class="flex gap-2 justify-center">
+                                <button onclick="window.openVerifyModal('${s.id}')" class="bg-white border border-gray-300 px-3 py-1 rounded text-xs font-bold">Verify</button>
+                                <button onclick="window.openStoreInspector('${s.id}')" class="bg-gray-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-black"><i class="fa fa-eye"></i> Check</button>
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('count-loaded').textContent = allSellers.length;
+            document.getElementById('count-risk').textContent = allSellers.filter(s => s.score < 50 || s.sellerStatus === 'pending').length;
+        }
+
+        window.openStoreInspector = async (uid) => {
+            selectedSeller = allSellers.find(s => s.id === uid);
+            document.getElementById('store-check-modal').classList.remove('hidden');
+            let sData = storeDataCache.get(uid) || {};
+            if (!sData.storeName) {
+                 try { const docSnap = await getDoc(doc(db, publicDataPath, 'stores', uid)); if(docSnap.exists()) { sData = docSnap.data(); storeDataCache.set(uid, sData); } } catch(e){}
+            }
+            document.getElementById('modal-store-name').innerHTML = `${sData.storeName || selectedSeller.storeName} <i class="fa fa-pencil-alt text-xs text-gray-500"></i>`;
+            document.getElementById('modal-store-loc').textContent = sData.location || "Unknown";
+            document.getElementById('modal-store-img').src = sData.profileUrl || selectedSeller.photoUrl || "https://placehold.co/100";
+            
+            const q = query(collection(db, publicDataPath, 'products'), where("sellerUid", "==", uid));
+            const snap = await getDocs(q);
+            sellerProducts = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            document.getElementById('modal-prod-count').textContent = sellerProducts.length;
+            renderProductList(sellerProducts);
+        };
+
+        // --- 🆕 Store Profile Editor (Images + AI Animation) ---
+        window.openStoreProfileEditor = () => {
+            if(!selectedSeller) return;
+            const sData = storeDataCache.get(selectedSeller.id) || {};
+            document.getElementById('edit-store-name').value = sData.storeName || selectedSeller.storeName;
+            document.getElementById('edit-store-loc').value = sData.location || "";
+            document.getElementById('edit-store-desc').value = sData.description || "";
+            document.getElementById('edit-store-icon-preview').src = sData.profileUrl || selectedSeller.photoUrl || "https://placehold.co/100";
+            document.getElementById('edit-store-banner-preview').src = sData.bannerUrl || "https://placehold.co/300x100";
+            document.getElementById('store-edit-modal').classList.remove('hidden');
+        };
+
+        window.previewImage = (input, previewId) => {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => document.getElementById(previewId).src = e.target.result;
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function uploadToImgBB(file) {
+            const d = new FormData(); d.append('image', file);
+            try { const r = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, { method: 'POST', body: d }); const j = await r.json(); return j.data.url; } catch(e) { return null; }
+        }
+
+        window.saveStoreProfile = async () => {
+            const btn = document.getElementById('save-store-profile-btn');
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Updating...'; btn.disabled = true;
+            
+            const name = document.getElementById('edit-store-name').value;
+            const loc = document.getElementById('edit-store-loc').value;
+            const desc = document.getElementById('edit-store-desc').value;
+            
+            let profileUrl = document.getElementById('edit-store-icon-preview').src;
+            let bannerUrl = document.getElementById('edit-store-banner-preview').src;
+
+            // Upload New Images if selected
+            const iconFile = document.getElementById('edit-store-icon-file').files[0];
+            const bannerFile = document.getElementById('edit-store-banner-file').files[0];
+
+            if(iconFile) { const url = await uploadToImgBB(iconFile); if(url) profileUrl = url; }
+            if(bannerFile) { const url = await uploadToImgBB(bannerFile); if(url) bannerUrl = url; }
+
+            try {
+                const newData = { storeName: name, location: loc, description: desc, profileUrl, bannerUrl };
+                await updateDoc(doc(db, publicDataPath, 'stores', selectedSeller.id), newData);
+                alert("Profile Updated!");
+                document.getElementById('store-edit-modal').classList.add('hidden');
+                storeDataCache.set(selectedSeller.id, newData); // Update Cache
+                openStoreInspector(selectedSeller.id); // Refresh View
+            } catch(e) { alert("Update Failed: " + e.message); }
+            btn.innerHTML = 'Update Profile'; btn.disabled = false;
+        };
+
+        window.generateStoreDescAI = async () => {
+            const name = document.getElementById('edit-store-name').value;
+            if(!name) return alert("Enter Name first");
+            const field = document.getElementById('edit-store-desc');
+            field.classList.add('ai-writing-active'); // Start Animation
+            field.value = "Writing description...";
+            try {
+                const text = await callGeminiWithFallback(`Write a short, warm, professional description for a Sri Lankan shop named "${name}".`);
+                field.value = text;
+            } catch(e) { field.value = "Error: " + e.message; }
+            finally { field.classList.remove('ai-writing-active'); } // Stop Animation
+        };
+
+        function renderProductList(products) {
+            const list = document.getElementById('product-list-container');
+            if(products.length === 0) { list.innerHTML = '<div class="text-center text-gray-400 mt-10">No Products</div>'; return; }
+            list.innerHTML = products.map(p => `
+                <div onclick="selectProduct('${p.id}')" class="flex gap-3 p-3 rounded-lg cursor-pointer hover:bg-blue-50 transition group border-b">
+                    <img src="${p.imageUrl || 'https://placehold.co/100'}" class="w-12 h-12 rounded object-cover bg-gray-200" onerror="this.src='https://placehold.co/100'">
+                    <div class="overflow-hidden flex-grow">
+                        <p class="font-bold text-sm text-gray-800 truncate">${p.name}</p>
+                        <p class="text-xs text-gray-500 font-mono">Rs. ${p.price}</p>
+                    </div>
+                </div>`).join('');
+        }
+
+        window.selectProduct = (pid) => {
+            selectedProduct = sellerProducts.find(p => p.id === pid);
+            document.getElementById('product-editor-empty').classList.add('hidden');
+            document.getElementById('product-editor-content').classList.remove('hidden');
+            
+            document.getElementById('edit-prod-img').src = selectedProduct.imageUrl || "";
+            document.getElementById('edit-prod-name').value = selectedProduct.name;
+            document.getElementById('edit-prod-desc').value = selectedProduct.description;
+            document.getElementById('edit-prod-cat').value = selectedProduct.category;
+            document.getElementById('edit-prod-price').value = selectedProduct.price;
+            document.getElementById('edit-prod-orig-price').value = selectedProduct.originalPrice || '';
+            document.getElementById('edit-prod-min-price').value = selectedProduct.minPrice || '';
+            document.getElementById('edit-prod-active').checked = selectedProduct.isApproved !== false;
+            document.getElementById('edit-prod-custom').checked = selectedProduct.customizationAvailable || false;
+            
+            const varContainer = document.getElementById('edit-prod-variations');
+            varContainer.innerHTML = '';
+            if (selectedProduct.variations) selectedProduct.variations.forEach(v => addVariationRowAdmin(v));
+            
+            document.getElementById('ai-status').textContent = "";
+            document.getElementById('manual-ai-btn').classList.add('hidden');
+        };
+
+        window.addVariationRowAdmin = (data = {}) => {
+            const div = document.createElement('div');
+            div.className = 'flex gap-2 items-center bg-gray-100 p-2 rounded variation-row mb-2';
+            div.innerHTML = `<input type="text" class="v-name w-1/2 p-1 border rounded text-xs" placeholder="Name" value="${data.name || ''}"><input type="number" class="v-price w-1/3 p-1 border rounded text-xs" placeholder="Price" value="${data.price || ''}"><button onclick="this.closest('.variation-row').remove()" class="text-red-500 hover:text-red-700 px-2"><i class="fa fa-times"></i></button>`;
+            document.getElementById('edit-prod-variations').appendChild(div);
+        };
+
+        window.magicFixProduct = async () => {
+            if(!GEMINI_API_KEY) return alert("AI Key Missing");
+            const btn = document.querySelector('.magic-btn');
+            const status = document.getElementById('ai-status');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Scanning...';
+            status.textContent = "Fetching Image...";
+
+            try {
+                if(!selectedProduct.imageUrl) throw new Error("No Image URL");
+                let base64 = null;
+                const imageUrl = selectedProduct.imageUrl;
+                const strategies = [() => fetch(imageUrl), () => fetch('https://corsproxy.io/?' + encodeURIComponent(imageUrl)), () => fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(imageUrl))];
+                for (const strategy of strategies) { try { const res = await strategy(); if(res.ok) { const blob = await res.blob(); base64 = await blobToBase64(blob); break; } } catch(e) {} }
+                if(!base64) throw new Error("Fetch Failed");
+                await analyzeImageAI(base64, btn, originalHtml, status);
+            } catch(e) {
+                console.warn("Auto-fetch failed. Showing manual upload option.");
+                status.textContent = "Scan failed. Use manual upload below.";
+                status.className = "text-xs text-center font-bold h-4 transition-colors text-red-500";
+                document.getElementById('manual-ai-btn').classList.remove('hidden');
+                btn.disabled = false; btn.innerHTML = originalHtml;
+            }
+        };
+
+        window.handleManualAIUpload = async (input) => {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const status = document.getElementById('ai-status');
+                status.textContent = "Reading File...";
+                const base64 = await blobToBase64(file);
+                await analyzeImageAI(base64, document.querySelector('.magic-btn'), document.querySelector('.magic-btn').innerHTML, status);
+            }
+        }
+
+        async function analyzeImageAI(base64, btn, originalHtml, status) {
+            status.textContent = "Analyzing...";
+            try {
+                const prompt = `Analyze image. Return JSON: { "name": "Short Title", "description": "2 sentences", "category": "One Word" }`;
+                const responseText = await callGeminiWithFallback(prompt, base64);
+                const json = JSON.parse(responseText.replace(/```json|```/g, '').trim());
+                
+                updateField('edit-prod-name', json.name);
+                updateField('edit-prod-desc', json.description);
+                updateField('edit-prod-cat', json.category);
+                status.textContent = "✨ Fixed!";
+                status.className = "text-xs text-center font-bold h-4 transition-colors text-green-600";
+                document.getElementById('manual-ai-btn').classList.add('hidden');
+            } catch(e) { status.textContent = "AI Error"; }
+            finally { btn.disabled = false; btn.innerHTML = originalHtml; }
+        }
+
+        window.generateDescriptionOnly = async () => {
+            const name = document.getElementById('edit-prod-name').value;
+            const cat = document.getElementById('edit-prod-cat').value;
+            if(!name) return alert("Enter Product Name");
+            const field = document.getElementById('edit-prod-desc');
+            field.classList.add('ai-writing-active'); // Start Anim
+            field.value = "Writing...";
+            try {
+                const text = await callGeminiWithFallback(`Write a persuasive 2-sentence description for a product named "${name}" in category "${cat}".`);
+                field.value = text;
+            } catch(e) { field.value = "Error"; }
+            finally { field.classList.remove('ai-writing-active'); } // Stop Anim
+        };
+
+        function blobToBase64(blob) { return new Promise((resolve) => { const r = new FileReader(); r.onloadend = () => resolve(r.result.split(',')[1]); r.readAsDataURL(blob); }); }
+        function updateField(id, val) { const el = document.getElementById(id); el.value = val; el.style.backgroundColor = '#f0fdf4'; setTimeout(() => el.style.backgroundColor = '', 1000); }
+
+        window.saveProductChanges = async () => {
+            if(!selectedProduct) return;
+            const btn = document.getElementById('save-prod-btn'); btn.innerHTML = 'Saving...';
+            const vars = []; document.querySelectorAll('.variation-row').forEach(row => { const name = row.querySelector('.v-name').value; const price = row.querySelector('.v-price').value; if(name && price) vars.push({ name, price: Number(price) }); });
+            try {
+                await updateDoc(doc(db, publicDataPath, 'products', selectedProduct.id), {
+                    name: document.getElementById('edit-prod-name').value,
+                    description: document.getElementById('edit-prod-desc').value,
+                    category: document.getElementById('edit-prod-cat').value,
+                    price: Number(document.getElementById('edit-prod-price').value),
+                    originalPrice: Number(document.getElementById('edit-prod-orig-price').value) || null,
+                    minPrice: Number(document.getElementById('edit-prod-min-price').value) || null,
+                    customizationAvailable: document.getElementById('edit-prod-custom').checked,
+                    isApproved: document.getElementById('edit-prod-active').checked,
+                    variations: vars
+                });
+                alert("Updated!"); openStoreInspector(selectedSeller.id); 
+            } catch(e) { alert(e.message); }
+            btn.innerHTML = '<i class="fa fa-save"></i> Save Changes';
+        };
+
+        window.deleteProduct = async () => {
+            if(confirm("Delete product?")) {
+                await deleteDoc(doc(db, publicDataPath, 'products', selectedProduct.id));
+                document.getElementById('product-editor-content').classList.add('hidden');
+                document.getElementById('product-editor-empty').classList.remove('hidden');
+                openStoreInspector(selectedSeller.id);
+            }
+        };
+
+        window.openVerifyModal = (uid) => {
+            selectedSeller = allSellers.find(s => s.id === uid);
+            document.getElementById('verify-modal').classList.remove('hidden');
+            document.getElementById('verify-name').textContent = selectedSeller.name;
+            document.getElementById('verify-email').textContent = selectedSeller.email;
+            document.getElementById('verify-doc-img').src = selectedSeller.idCardUrl || "https://placehold.co/600x400?text=No+ID";
+            currentRotation = 0; document.getElementById('verify-doc-img').style.transform = `rotate(${currentRotation}deg)`;
+        };
+        window.rotateImage = () => { currentRotation += 90; document.getElementById('verify-doc-img').style.transform = `rotate(${currentRotation}deg)`; };
+        window.updateSellerStatus = async (status) => {
+            if(!selectedSeller) return;
+            await updateDoc(doc(db, "users", selectedSeller.id), { sellerStatus: status });
+            document.getElementById('verify-modal').classList.add('hidden');
+        };
+        window.runAIAnalysis = () => { document.getElementById('ai-result-box').classList.remove('hidden'); document.getElementById('match-verdict').textContent = "Analysing..."; setTimeout(() => { document.getElementById('match-verdict').textContent = "✅ Likely Match"; document.getElementById('match-verdict').className = "mt-3 text-center p-2 rounded-lg font-bold text-sm bg-green-100 text-green-700"; }, 1500); };
+
+        window.closeStoreModal = () => document.getElementById('store-check-modal').classList.add('hidden');
+        
+        document.getElementById('search-input').addEventListener('input', () => renderTable(allSellers));
+        document.getElementById('status-filter').addEventListener('change', () => renderTable(allSellers));
+        document.getElementById('prod-search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            renderProductList(sellerProducts.filter(p => p.name.toLowerCase().includes(term)));
+        });
+
+        loadInitialSellers();
+    </script>
+</body>
+</html>

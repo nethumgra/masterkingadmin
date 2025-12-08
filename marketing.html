@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Hub - Mudalali Mama</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'offer-red': '#ef4444', 'ai-purple': '#8b5cf6' } } }
+        }
+    </script>
+    <style>
+        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .banner-card { transition: all 0.3s ease; }
+        .banner-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        .tab-btn { @apply px-4 py-2 text-sm font-semibold rounded-lg transition-colors border border-transparent; }
+        .tab-btn.active { @apply bg-mudalali-green text-white shadow-sm; }
+        .tab-btn.inactive { @apply text-gray-500 hover:bg-gray-100; }
+        
+        .file-upload-label { @apply flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Marketing Command Center 🚀</h1>
+                <p class="text-sm text-gray-500">Manage Banners, Promos & Vouchers</p>
+            </div>
+            <div class="flex gap-2">
+                 <button onclick="document.getElementById('category-modal').classList.remove('hidden')" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-black transition">
+                    <i class="fa fa-plus-circle mr-2"></i> Add Category
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- LEFT COLUMN: Banners & Promos -->
+            <div class="lg:col-span-2 space-y-8">
+                
+                <!-- 1. Hero Banners -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                        <i class="fa fa-layer-group text-mudalali-green"></i> Main Sliders (Hero)
+                    </h3>
+                    <div id="hero-banners-list" class="space-y-4">
+                        <p class="text-center text-gray-400 py-4"><i class="fa fa-spinner fa-spin"></i> Loading Hero Slots...</p>
+                    </div>
+                </div>
+
+                <!-- 2. Small Banners -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                        <i class="fa fa-images text-blue-500"></i> Small Banners
+                    </h3>
+                    <div id="small-banners-list" class="space-y-4">
+                        <p class="text-center text-gray-400 py-4">Loading Small Banners...</p>
+                    </div>
+                </div>
+
+                <!-- 3. Shop By Category Banners -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                        <i class="fa fa-th-large text-purple-600"></i> Shop By Category Banners
+                    </h3>
+                    <div id="shop-cat-banners-list" class="space-y-4">
+                        <p class="text-center text-gray-400 py-4">Loading...</p>
+                    </div>
+                </div>
+
+                <!-- 4. Product Promo Areas -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                        <i class="fa fa-bullhorn text-orange-500"></i> Product Promo Areas
+                    </h3>
+                    <div id="promo-areas-list" class="space-y-4">
+                        <p class="text-center text-gray-400 py-4">Loading Promos...</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: Tools, Categories & Coupons -->
+            <div class="space-y-8">
+                
+                <!-- Category Management List -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-lg text-gray-800"><i class="fa fa-list text-gray-600 mr-2"></i> Categories</h3>
+                    </div>
+                    <div id="categories-list" class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        <p class="text-center text-gray-400">Loading Categories...</p>
+                    </div>
+                </div>
+
+                <!-- Push Notification -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative overflow-hidden">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4"><i class="fa fa-bell text-blue-600 mr-2"></i> Push Notification</h3>
+                    <div class="space-y-4">
+                        <input type="text" id="notif-title" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Title (e.g. Flash Sale! ⚡)">
+                        <textarea id="notif-body" rows="2" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Message Body..."></textarea>
+                        <button onclick="sendNotification()" id="btn-send-push" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition">
+                            <i class="fa fa-paper-plane"></i> Send Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Coupon Manager (Updated) -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fa fa-ticket-alt text-offer-red"></i> Coupon Manager
+                    </h3>
+                    
+                    <!-- Create Form -->
+                    <div class="bg-red-50 p-4 rounded-lg border border-red-100 mb-4">
+                        <p class="text-xs font-bold text-red-600 uppercase mb-2">Create New Voucher</p>
+                        <div class="flex gap-2 mb-2">
+                            <input type="text" id="promo-code" class="w-2/3 border p-2 rounded uppercase font-bold text-center text-sm" placeholder="CODE123">
+                            <input type="number" id="promo-percent" class="w-1/3 border p-2 rounded text-center text-sm" placeholder="10%">
+                        </div>
+                        <button onclick="createPromo()" class="w-full bg-red-600 text-white font-bold py-2 rounded-lg hover:bg-red-700 text-sm shadow-sm">
+                            <i class="fa fa-plus-circle"></i> Add Coupon
+                        </button>
+                    </div>
+
+                    <!-- Active Coupons List -->
+                    <div>
+                        <p class="text-xs font-bold text-gray-500 uppercase mb-2">Active Coupons</p>
+                        <div id="coupons-list" class="space-y-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+                            <p class="text-center text-gray-400 text-xs py-4">Loading active coupons...</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 1. Edit Banner Modal (Unified with Upload) -->
+    <div id="edit-banner-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform transition-all scale-100">
+            <div class="bg-gray-800 p-4 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg" id="modal-title">Edit Banner</h3>
+                <button onclick="closeModal('edit-banner-modal')" class="text-white hover:text-gray-300 text-2xl">&times;</button>
+            </div>
+            
+            <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                <input type="hidden" id="edit-slot-id">
+                <input type="hidden" id="edit-collection"> 
+                
+                <!-- Device Switcher Tabs -->
+                <div class="flex gap-2 bg-gray-100 p-1 rounded-lg mb-2">
+                    <button onclick="switchTab('pc')" id="tab-pc" class="tab-btn active w-1/2"><i class="fa fa-desktop"></i> Desktop</button>
+                    <button onclick="switchTab('mob')" id="tab-mob" class="tab-btn inactive w-1/2"><i class="fa fa-mobile-alt"></i> Mobile</button>
+                </div>
+
+                <!-- Desktop Fields -->
+                <div id="view-pc" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Desktop Image</label>
+                        
+                        <!-- Upload Box -->
+                        <label class="file-upload-label mb-2">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
+                                <p class="text-xs text-gray-500"><span class="font-bold">Click to upload</span> or drag and drop</p>
+                            </div>
+                            <input type="file" id="file-pc" class="hidden" accept="image/*" onchange="handleFileSelect('pc')">
+                        </label>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="edit-img-pc" class="w-full border p-2 rounded text-sm bg-gray-50" placeholder="Image URL" oninput="previewImage('pc')">
+                            <button onclick="generateAIImage('pc')" class="bg-purple-100 text-purple-600 px-2 rounded text-xs font-bold hover:bg-purple-200 whitespace-nowrap">AI Gen</button>
+                        </div>
+                        <img id="preview-pc" class="w-full h-32 object-cover mt-2 rounded border hidden">
+                    </div>
+                </div>
+
+                <!-- Mobile Fields -->
+                <div id="view-mob" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mobile Image (Optional)</label>
+                        
+                        <!-- Upload Box -->
+                        <label class="file-upload-label mb-2">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
+                                <p class="text-xs text-gray-500"><span class="font-bold">Click to upload</span> or drag and drop</p>
+                            </div>
+                            <input type="file" id="file-mob" class="hidden" accept="image/*" onchange="handleFileSelect('mob')">
+                        </label>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="edit-img-mob" class="w-full border p-2 rounded text-sm bg-gray-50" placeholder="Use Desktop image if empty" oninput="previewImage('mob')">
+                            <button onclick="generateAIImage('mob')" class="bg-purple-100 text-purple-600 px-2 rounded text-xs font-bold hover:bg-purple-200 whitespace-nowrap">AI Gen</button>
+                        </div>
+                        <img id="preview-mob" class="w-full h-32 object-contain mt-2 rounded border hidden">
+                    </div>
+                </div>
+
+                <!-- Common Link -->
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Click Link</label>
+                    <input type="text" id="edit-link" class="w-full border p-2 rounded text-sm" placeholder="/shop?cat=electronics">
+                </div>
+                
+                <!-- AI Prompt Hidden -->
+                <div id="ai-prompt-box" class="hidden mt-2 p-2 bg-purple-50 rounded border border-purple-200">
+                    <input type="text" id="ai-prompt" class="w-full border p-1 rounded text-xs mb-1" placeholder="Describe image...">
+                    <button onclick="confirmAIGen()" class="bg-purple-600 text-white text-xs px-2 py-1 rounded w-full">Generate</button>
+                </div>
+            </div>
+
+            <div class="p-4 bg-gray-50 border-t flex justify-end gap-3">
+                <button onclick="closeModal('edit-banner-modal')" class="px-4 py-2 text-gray-500 font-bold text-sm">Cancel</button>
+                <button onclick="saveBannerChange()" id="btn-save-banner" class="px-6 py-2 bg-mudalali-green text-white rounded-lg font-bold hover:bg-green-800 shadow-md text-sm">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Edit Promo Area Modal -->
+    <div id="edit-promo-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-orange-600 p-4 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg">Edit Promo Area</h3>
+                <button onclick="closeModal('edit-promo-modal')" class="text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="promo-id">
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Area Title</label>
+                    <input type="text" id="promo-title" class="w-full border p-2 rounded text-sm font-bold">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Banner Image</label>
+                    <label class="file-upload-label h-24 mb-2">
+                        <span class="text-xs text-gray-500">Click to upload</span>
+                        <input type="file" id="file-promo" class="hidden" accept="image/*" onchange="handleFileSelect('promo')">
+                    </label>
+                    <input type="text" id="promo-img" class="w-full border p-2 rounded text-sm" oninput="document.getElementById('promo-preview').src = this.value">
+                    <img id="promo-preview" class="w-full h-24 object-cover mt-2 rounded border bg-gray-100 hidden">
+                </div>
+                
+                 <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Linked Carousel</label>
+                    <select id="promo-carousel" class="w-full border p-2 rounded text-sm bg-white">
+                        <option value="">None</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Banner Link</label>
+                    <input type="text" id="promo-link" class="w-full border p-2 rounded text-sm">
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end">
+                <button onclick="savePromoArea()" id="btn-save-promo" class="px-6 py-2 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700 shadow-md text-sm">Save Promo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Add Category Modal -->
+    <div id="category-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-gray-800 p-4 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg">Add Category</h3>
+                <button onclick="closeModal('category-modal')" class="text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Category Name</label>
+                    <input type="text" id="cat-name" class="w-full border p-2 rounded text-sm font-bold">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Image</label>
+                    <label class="file-upload-label h-20 mb-2">
+                        <span class="text-xs text-gray-500">Upload Icon</span>
+                        <input type="file" id="file-cat" class="hidden" accept="image/*" onchange="handleFileSelect('cat')">
+                    </label>
+                    <div class="flex gap-2">
+                         <input type="text" id="cat-img" class="w-full border p-2 rounded text-sm" placeholder="URL">
+                    </div>
+                    <img id="preview-cat" class="w-10 h-10 object-contain mt-2 hidden border">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Background Color</label>
+                    <input type="color" id="cat-color" class="w-full h-10 p-1 rounded border" value="#f5f5f4">
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end">
+                <button onclick="saveCategory()" id="btn-save-cat" class="px-6 py-2 bg-gray-800 text-white rounded-lg font-bold hover:bg-black shadow-md text-sm">Create Category</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { renderSidebar, checkAdminAuth, db } from "./common.js";
+        import { collection, onSnapshot, addDoc, doc, updateDoc, setDoc, getDoc, getDocs, serverTimestamp, deleteDoc, query, where, documentId } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('marketing');
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const publicDataPath = `/artifacts/${appId}/public/data`;
+        const siteContentPath = `${publicDataPath}/siteContent`;
+        const shopBannerPath = `${publicDataPath}/shopByCategoryBanners`;
+        const promoAreaPath = `${publicDataPath}/productPromoAreas`;
+        const categoryPath = `${publicDataPath}/categories`;
+        const carouselPath = `${publicDataPath}/productCarousels`;
+        const couponsPath = `${publicDataPath}/coupons`; // New path
+        
+        const imgbbApiKey = 'f068295c19803c448665a0ea48bcc2fc'; 
+
+        // --- DEFINITIONS ---
+        const HERO_SLOTS = [
+            { id: 'heroBanner1', name: 'Hero Banner 1' },
+            { id: 'heroBanner2', name: 'Hero Banner 2' },
+            { id: 'heroBanner3', name: 'Hero Banner 3' }
+        ];
+
+        const SMALL_SLOTS = [
+            { id: 'smallBanner1', name: 'Small Banner 1 (Left)' },
+            { id: 'smallBanner2', name: 'Small Banner 2 (Middle)' },
+            { id: 'smallBanner3', name: 'Small Banner 3 (Right)' }
+        ];
+
+        const SHOP_CAT_SLOTS = [
+            { id: 'shopByCatLarge', name: 'Large Banner (Left)' },
+            { id: 'shopByCatSmall1', name: 'Small Banner (Top Right)' },
+            { id: 'shopByCatSmall2', name: 'Small Banner (Bottom Right)' }
+        ];
+
+        const PROMO_AREAS = [
+            { id: 'promo_1', name: 'Product Promo Area 1' },
+            { id: 'promo_2', name: 'Product Promo Area 2' }
+        ];
+
+        let availableCarousels = [];
+        let currentActiveGenType = null; // for AI gen logic
+
+        // --- INITIALIZATION ---
+        async function init() {
+            await loadCarousels(); 
+            loadAllBannersOptimized();
+            loadCategories();
+            loadCoupons(); // Load Coupons
+        }
+
+        // --- OPTIMIZED LOADING LOGIC (Batch Reads) ---
+        async function loadAllBannersOptimized() {
+            // 1. Load Hero Banners
+            const heroContainer = document.getElementById('hero-banners-list');
+            heroContainer.innerHTML = '';
+            const heroIds = HERO_SLOTS.map(s => s.id);
+            const homeDataMap = await fetchBatchDocs(siteContentPath, [...heroIds, ...SMALL_SLOTS.map(s=>s.id)]); // Fetch Hero & Small together
+            
+            HERO_SLOTS.forEach(slot => {
+                const data = homeDataMap[slot.id] || {};
+                renderBannerCard(heroContainer, slot, data, 'siteContent');
+            });
+
+            // 2. Load Small Banners (New Separate List)
+            const smallContainer = document.getElementById('small-banners-list');
+            smallContainer.innerHTML = '';
+            SMALL_SLOTS.forEach(slot => {
+                const data = homeDataMap[slot.id] || {};
+                renderBannerCard(smallContainer, slot, data, 'siteContent');
+            });
+
+            // 3. Load Shop By Cat Banners
+            const shopContainer = document.getElementById('shop-cat-banners-list');
+            shopContainer.innerHTML = '';
+            const shopIds = SHOP_CAT_SLOTS.map(s => s.id);
+            const shopDataMap = await fetchBatchDocs(shopBannerPath, shopIds);
+
+            SHOP_CAT_SLOTS.forEach(slot => {
+                const data = shopDataMap[slot.id] || {};
+                renderBannerCard(shopContainer, slot, data, 'shopByCategoryBanners');
+            });
+
+            // 4. Load Promo Areas
+            const promoContainer = document.getElementById('promo-areas-list');
+            promoContainer.innerHTML = '';
+            const promoIds = PROMO_AREAS.map(s => s.id);
+            const promoDataMap = await fetchBatchDocs(promoAreaPath, promoIds);
+            
+            PROMO_AREAS.forEach(slot => {
+                const data = promoDataMap[slot.id] || {};
+                renderPromoCard(promoContainer, slot, data);
+            });
+        }
+
+        // --- BATCH FETCH HELPER ---
+        async function fetchBatchDocs(collPath, ids) {
+            try {
+                const results = {};
+                // Chunking to handle potential > 10 IDs (though not expected here)
+                const chunks = [];
+                for (let i = 0; i < ids.length; i += 10) {
+                    chunks.push(ids.slice(i, i + 10));
+                }
+                
+                for(const chunk of chunks) {
+                    const q = query(collection(db, collPath), where(documentId(), 'in', chunk));
+                    const snap = await getDocs(q);
+                    snap.forEach(doc => { results[doc.id] = doc.data(); });
+                }
+                return results;
+            } catch (e) {
+                console.warn("Batch fetch warn:", e);
+                return {}; 
+            }
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function renderBannerCard(container, slot, data, collectionName) {
+            const hasImage = data.imageUrl || data.imageUrl_pc || data.imageUrl_mob;
+            const displayImg = data.imageUrl_pc || data.imageUrl || 'https://placehold.co/600x200?text=Empty';
+            const statusBadge = hasImage ? 
+                `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Active</span>` : 
+                `<span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Empty</span>`;
+
+            const html = `
+                <div class="banner-card flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 items-center">
+                    <div class="w-24 h-12 bg-white rounded overflow-hidden border shadow-sm relative flex-shrink-0">
+                        <img src="${displayImg}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-xs text-gray-700 truncate">${slot.name}</span>
+                            ${statusBadge}
+                        </div>
+                        <p class="text-[10px] text-gray-400 truncate">${data.linkUrl || 'No link set'}</p>
+                    </div>
+                    <button onclick="openEditModal('${slot.id}', '${slot.name}', '${collectionName}')" class="bg-white border hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition">
+                        Edit
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function renderPromoCard(container, slot, data) {
+            const hasImg = data.bannerImageUrl;
+            const statusHtml = hasImg ? '<span class="text-green-600 text-xs font-bold">Active</span>' : '<span class="text-gray-400 text-xs">Inactive</span>';
+            
+            const html = `
+                <div class="flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 items-center">
+                    <div class="w-16 h-16 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
+                        <img src="${data.bannerImageUrl || 'https://placehold.co/100'}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-sm text-gray-800">${slot.name}</h4>
+                        <p class="text-xs text-gray-500">${data.title || 'No Title'}</p>
+                        ${statusHtml}
+                    </div>
+                    <button onclick="openPromoModal('${slot.id}', '${slot.name}')" class="bg-white border hover:bg-orange-50 text-orange-600 px-3 py-1 rounded text-xs font-bold">Edit</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // --- 4. CATEGORIES ---
+        function loadCategories() {
+            const container = document.getElementById('categories-list');
+            onSnapshot(collection(db, categoryPath), (snap) => {
+                if(snap.empty) { container.innerHTML = '<p class="text-gray-400 text-center text-sm">No categories yet.</p>'; return; }
+                container.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    container.innerHTML += `
+                        <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded border-b border-gray-100 last:border-0">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden" style="background-color: ${d.color || '#eee'}">
+                                    <img src="${d.imageUrl || ''}" class="w-6 h-6 object-contain" onerror="this.style.display='none'">
+                                </div>
+                                <span class="text-sm font-semibold text-gray-700">${d.name}</span>
+                            </div>
+                            <button onclick="deleteCategory('${doc.id}')" class="text-red-400 hover:text-red-600"><i class="fa fa-trash"></i></button>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // --- 5. COUPONS ---
+        function loadCoupons() {
+            const container = document.getElementById('coupons-list');
+            onSnapshot(collection(db, couponsPath), (snap) => {
+                if(snap.empty) { container.innerHTML = '<p class="text-gray-400 text-center text-xs py-4">No active coupons.</p>'; return; }
+                container.innerHTML = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    container.innerHTML += `
+                        <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100 hover:shadow-sm transition">
+                            <div>
+                                <p class="font-bold text-sm text-gray-800 tracking-wide">${d.code}</p>
+                                <p class="text-[10px] font-bold text-offer-red">${d.discount}% Discount</p>
+                            </div>
+                            <button onclick="deleteCoupon('${doc.id}')" class="text-gray-400 hover:text-red-600 transition p-1"><i class="fa fa-trash"></i></button>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        // --- HELPERS ---
+        async function fetchDoc(path, id) {
+            try {
+                const snap = await getDoc(doc(db, path, id));
+                return snap.exists() ? snap.data() : {};
+            } catch(e) { return {}; }
+        }
+
+        async function loadCarousels() {
+            try {
+                const snap = await getDocs(collection(db, carouselPath));
+                availableCarousels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch(e) { console.error(e); }
+        }
+
+        // --- UPLOAD LOGIC ---
+        window.handleFileSelect = async (type) => {
+            const fileInput = document.getElementById(`file-${type}`);
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Show loading state
+            const targetInputId = type === 'cat' ? 'cat-img' : (type === 'promo' ? 'promo-img' : `edit-img-${type}`);
+            const targetInput = document.getElementById(targetInputId);
+            const originalVal = targetInput.value;
+            targetInput.value = "Uploading...";
+            targetInput.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (data.success) {
+                    targetInput.value = data.data.url;
+                    
+                    // Trigger preview update
+                    if (type === 'cat') {
+                        const img = document.getElementById('preview-cat');
+                        img.src = data.data.url; img.classList.remove('hidden');
+                    } else if (type === 'promo') {
+                        document.getElementById('promo-preview').src = data.data.url;
+                        document.getElementById('promo-preview').classList.remove('hidden');
+                    } else {
+                        window.previewImage(type);
+                    }
+                } else {
+                    throw new Error("Upload Failed");
+                }
+            } catch (e) {
+                alert("Image Upload Failed: " + e.message);
+                targetInput.value = originalVal;
+            } finally {
+                targetInput.disabled = false;
+            }
+        };
+
+        // --- MODAL LOGIC (BANNERS) ---
+        window.openEditModal = async (slotId, slotName, collectionName) => {
+            const modal = document.getElementById('edit-banner-modal');
+            modal.classList.remove('hidden');
+            document.getElementById('modal-title').textContent = `Edit: ${slotName}`;
+            document.getElementById('edit-slot-id').value = slotId;
+            document.getElementById('edit-collection').value = collectionName;
+            
+            // Clear inputs
+            document.getElementById('file-pc').value = '';
+            document.getElementById('file-mob').value = '';
+            
+            const path = collectionName === 'siteContent' ? siteContentPath : shopBannerPath;
+            const data = await fetchDoc(path, slotId);
+
+            document.getElementById('edit-img-pc').value = data.imageUrl_pc || data.imageUrl || '';
+            document.getElementById('edit-img-mob').value = data.imageUrl_mob || '';
+            document.getElementById('edit-link').value = data.linkUrl || '';
+            
+            window.previewImage('pc');
+            window.previewImage('mob');
+            window.switchTab('pc'); 
+        };
+
+        window.switchTab = (mode) => {
+            const views = { pc: 'view-pc', mob: 'view-mob' };
+            const tabs = { pc: 'tab-pc', mob: 'tab-mob' };
+            
+            for (const k in views) {
+                document.getElementById(views[k]).classList.add('hidden');
+                document.getElementById(tabs[k]).classList.replace('active', 'inactive');
+            }
+            document.getElementById(views[mode]).classList.remove('hidden');
+            document.getElementById(tabs[mode]).classList.replace('inactive', 'active');
+        };
+
+        window.previewImage = (type) => {
+            const url = document.getElementById(`edit-img-${type}`).value;
+            const img = document.getElementById(`preview-${type}`);
+            if(url && url !== "Uploading...") { img.src = url; img.classList.remove('hidden'); }
+            else { img.classList.add('hidden'); }
+        };
+
+        window.saveBannerChange = async () => {
+            const btn = document.getElementById('btn-save-banner');
+            btn.textContent = "Saving...";
+            btn.disabled = true;
+
+            const slotId = document.getElementById('edit-slot-id').value;
+            const collName = document.getElementById('edit-collection').value;
+            const pcUrl = document.getElementById('edit-img-pc').value;
+            const mobUrl = document.getElementById('edit-img-mob').value;
+            const link = document.getElementById('edit-link').value;
+
+            if (pcUrl === "Uploading..." || mobUrl === "Uploading...") {
+                alert("Please wait for images to finish uploading.");
+                btn.disabled = false;
+                btn.textContent = "Save Changes";
+                return;
+            }
+
+            const path = collName === 'siteContent' ? siteContentPath : shopBannerPath;
+            const data = {
+                imageUrl: pcUrl, 
+                imageUrl_pc: pcUrl,
+                imageUrl_mob: mobUrl || pcUrl, 
+                linkUrl: link,
+                updatedAt: serverTimestamp()
+            };
+
+            // Maintain 'size' for shop banners if needed
+            if (collName === 'shopByCategoryBanners') {
+                if (slotId.includes('Large')) data.size = 'large';
+                else data.size = 'small';
+            }
+
+            try {
+                await setDoc(doc(db, path, slotId), data, { merge: true });
+                alert("Saved!");
+                window.closeModal('edit-banner-modal');
+                loadAllBannersOptimized(); // Refresh
+            } catch (e) {
+                alert("Error saving: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Save Changes";
+            }
+        };
+
+        // --- MODAL LOGIC (PROMOS) ---
+        window.openPromoModal = async (id, name) => {
+            document.getElementById('edit-promo-modal').classList.remove('hidden');
+            document.getElementById('promo-id').value = id;
+            document.getElementById('file-promo').value = '';
+            
+            // Populate Carousel Select
+            const select = document.getElementById('promo-carousel');
+            select.innerHTML = '<option value="">None</option>' + availableCarousels.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
+            const data = await fetchDoc(promoAreaPath, id);
+            document.getElementById('promo-title').value = data.title || '';
+            document.getElementById('promo-img').value = data.bannerImageUrl || '';
+            document.getElementById('promo-link').value = data.bannerLink || '';
+            document.getElementById('promo-carousel').value = data.productCarouselId || '';
+            
+            const img = document.getElementById('promo-preview');
+            if(data.bannerImageUrl) { img.src = data.bannerImageUrl; img.classList.remove('hidden'); }
+            else img.classList.add('hidden');
+        };
+
+        window.savePromoArea = async () => {
+            const btn = document.getElementById('btn-save-promo');
+            btn.textContent = "Saving...";
+            btn.disabled = true;
+
+            const id = document.getElementById('promo-id').value;
+            const imgUrl = document.getElementById('promo-img').value;
+
+            if (imgUrl === "Uploading...") {
+                alert("Wait for upload.");
+                btn.disabled = false; return;
+            }
+
+            const data = {
+                title: document.getElementById('promo-title').value,
+                bannerImageUrl: imgUrl,
+                bannerLink: document.getElementById('promo-link').value,
+                productCarouselId: document.getElementById('promo-carousel').value,
+                updatedAt: serverTimestamp()
+            };
+            await setDoc(doc(db, promoAreaPath, id), data, { merge: true });
+            alert("Promo Updated!");
+            window.closeModal('edit-promo-modal');
+            loadAllBannersOptimized();
+            btn.disabled = false;
+            btn.textContent = "Save Promo";
+        };
+
+        // --- CATEGORY LOGIC ---
+        window.saveCategory = async () => {
+            const btn = document.getElementById('btn-save-cat');
+            btn.disabled = true; btn.textContent = "Saving...";
+
+            const name = document.getElementById('cat-name').value;
+            const img = document.getElementById('cat-img').value;
+            const color = document.getElementById('cat-color').value;
+            
+            if(!name) { alert("Name Required"); btn.disabled = false; return; }
+            if(img === "Uploading...") { alert("Wait for upload"); btn.disabled = false; return; }
+
+            await addDoc(collection(db, categoryPath), {
+                name, imageUrl: img, color, createdAt: serverTimestamp()
+            });
+            alert("Category Added!");
+            window.closeModal('category-modal');
+            document.getElementById('cat-name').value = '';
+            document.getElementById('cat-img').value = '';
+            btn.disabled = false; btn.textContent = "Create Category";
+        };
+
+        window.deleteCategory = async (id) => {
+            if(confirm("Delete this category?")) await deleteDoc(doc(db, categoryPath, id));
+        };
+
+        // --- AI GENERATOR ---
+        window.generateAIImage = (type) => {
+            currentActiveGenType = type;
+            const box = document.getElementById('ai-prompt-box');
+            box.classList.remove('hidden');
+            document.getElementById('ai-prompt').focus();
+        };
+
+        window.confirmAIGen = () => {
+            const prompt = document.getElementById('ai-prompt').value;
+            if(!prompt) return;
+            const type = currentActiveGenType;
+            
+            const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=800&height=400&nologo=true&seed=${Math.random()}`;
+            document.getElementById(`edit-img-${type}`).value = url;
+            window.previewImage(type);
+            document.getElementById('ai-prompt-box').classList.add('hidden');
+        };
+        
+        window.generateAICatImage = () => {
+             const name = document.getElementById('cat-name').value;
+             if(!name) return alert("Enter name first");
+             const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(name + ' icon minimal 3d render')}?width=200&height=200&nologo=true`;
+             document.getElementById('cat-img').value = url;
+             const img = document.getElementById('preview-cat');
+             img.src = url; img.classList.remove('hidden');
+        };
+
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+        
+       
+        window.sendNotification = async () => {
+            const title = document.getElementById('notif-title').value;
+            const body = document.getElementById('notif-body').value;
+            if(!title) return alert("Title required");
+            await addDoc(collection(db, publicDataPath, "notifications"), { title, body, status: 'pending', sentAt: serverTimestamp() });
+            alert("Queued!");
+        };
+
+        window.createPromo = async () => {
+            const code = document.getElementById('promo-code').value;
+            const percent = document.getElementById('promo-percent').value;
+            if(!code || !percent) return alert("Code and Discount % required");
+            await addDoc(collection(db, couponsPath), { code: code.toUpperCase(), discount: parseInt(percent), active: true, createdAt: serverTimestamp() });
+            alert("Coupon Created!");
+            document.getElementById('promo-code').value = '';
+            document.getElementById('promo-percent').value = '';
+        };
+
+        window.deleteCoupon = async (id) => {
+            if(confirm("Delete this coupon?")) await deleteDoc(doc(db, couponsPath, id));
+        };
+
+        init();
+
+    </script>
+</body>
+</html>

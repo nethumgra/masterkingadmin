@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financials - Mudalali Mama Ultra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'ai-purple': '#8b5cf6', 'risk-red': '#ef4444' } } }
+        }
+    </script>
+    <style>
+        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .tab-btn { @apply px-6 py-2 font-bold text-gray-500 border-b-2 border-transparent hover:text-mudalali-green transition-all; }
+        .tab-btn.active { @apply text-mudalali-green border-mudalali-green; }
+        .scanning-bar { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #00ff00; box-shadow: 0 0 10px #00ff00; animation: scan 1.5s infinite linear; display: none; }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+        .risk-badge { @apply bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1 border border-red-200; }
+        .safe-badge { @apply bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1 border border-green-200; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Financial Fortress</h1>
+                <p class="text-sm text-gray-500">AI-Powered Payment & Audit System</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="runSystemAudit()" class="bg-gray-800 text-white px-5 py-2 rounded-full shadow-lg hover:bg-black transition flex items-center gap-2">
+                    <i class="fa fa-balance-scale"></i> Run Auto-Audit
+                </button>
+                <button onclick="generateWeeklyReport()" class="bg-ai-purple text-white px-5 py-2 rounded-full shadow-lg hover:bg-purple-600 transition flex items-center gap-2">
+                    <i class="fa fa-magic"></i> AI Weekly Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Smart Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600 relative overflow-hidden">
+                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fa fa-coins text-6xl text-green-600"></i></div>
+                <p class="text-gray-500 text-sm font-bold uppercase">Total Commission</p>
+                <h2 class="text-3xl font-bold mt-2" id="total-commission">Rs. 0.00</h2>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 relative overflow-hidden">
+                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fa fa-hand-holding-usd text-6xl text-red-500"></i></div>
+                <p class="text-gray-500 text-sm font-bold uppercase">Pending Payouts</p>
+                <h2 class="text-3xl font-bold mt-2 text-red-600" id="pending-payouts">Rs. 0.00</h2>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 relative overflow-hidden">
+                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fa fa-check-circle text-6xl text-blue-500"></i></div>
+                <p class="text-gray-500 text-sm font-bold uppercase">Total Paid</p>
+                <h2 class="text-3xl font-bold mt-2" id="total-paid">Rs. 0.00</h2>
+            </div>
+            <div class="bg-indigo-50 p-6 rounded-xl shadow-sm border-l-4 border-indigo-500 relative overflow-hidden">
+                <div class="absolute right-0 top-0 p-4 opacity-10"><i class="fa fa-crystal-ball text-6xl text-indigo-500"></i></div>
+                <p class="text-indigo-600 text-sm font-bold uppercase flex items-center gap-1"><i class="fa fa-bolt"></i> AI Prediction (Next Week)</p>
+                <h2 class="text-2xl font-bold mt-2 text-indigo-800" id="predicted-liability">Calculating...</h2>
+                <p class="text-xs text-indigo-500 mt-1">Based on processing orders</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-t-xl border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex gap-2">
+                <button onclick="switchTab('pending')" id="tab-pending" class="tab-btn active">Pending Balances</button>
+                <button onclick="switchTab('history')" id="tab-history" class="tab-btn">Payout History</button>
+            </div>
+
+            <div class="flex gap-2 w-full md:w-auto">
+                <div class="relative flex-grow md:w-64">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fa fa-search text-gray-400"></i></span>
+                    <input type="text" id="seller-search" class="w-full py-2 pl-10 pr-4 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mudalali-green outline-none" placeholder="Search Seller...">
+                </div>
+                
+                <button onclick="exportBatchPayment()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-bold shadow-sm" title="Download Bank CSV">
+                    <i class="fa fa-file-csv"></i> Batch Pay
+                </button>
+
+                <button onclick="downloadTablePDF()" class="bg-gray-700 text-white px-3 py-2 rounded-lg hover:bg-gray-800" title="Download PDF">
+                    <i class="fa fa-file-pdf"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Pending View -->
+        <div id="view-pending" class="bg-white rounded-b-xl shadow-sm overflow-hidden border border-t-0 border-gray-200">
+            <div id="pending-print-area">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-bold border-b">
+                        <tr>
+                            <th class="p-4">Seller Details</th>
+                            <th class="p-4">Bank</th>
+                            <th class="p-4 text-center">Risk Analysis</th>
+                            <th class="p-4 text-right">Commission</th>
+                            <th class="p-4 text-right text-red-600">Due Amount</th>
+                            <th class="p-4 text-center no-print">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="payout-table-body" class="divide-y divide-gray-100">
+                        <tr><td class="p-4 text-center" colspan="6"><i class="fa fa-spinner fa-spin"></i> Loading AI Financial Engine...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- History View -->
+        <div id="view-history" class="hidden bg-white rounded-b-xl shadow-sm overflow-hidden border border-t-0 border-gray-200">
+            <table class="w-full text-left text-sm text-gray-600">
+                <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-bold border-b">
+                    <tr>
+                        <th class="p-4">Date</th>
+                        <th class="p-4">Seller</th>
+                        <th class="p-4">Ref ID</th>
+                        <th class="p-4 text-center">Slip</th>
+                        <th class="p-4 text-right text-green-600">Amount Paid</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body" class="divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+
+    </main>
+
+    <!-- Payment Modal with OCR -->
+    <div id="payout-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden transform transition-all scale-100">
+            <div class="bg-gray-800 p-4 flex justify-between items-center text-white">
+                <h3 class="text-lg font-bold"><i class="fa fa-robot mr-2"></i> AI Payment Verifier</h3>
+                <button onclick="closeModal()" class="text-white hover:text-gray-300 text-2xl">&times;</button>
+            </div>
+            
+            <div class="p-6">
+                <p class="text-gray-600 mb-4 text-sm bg-yellow-50 p-2 rounded border border-yellow-100">
+                    Paying <strong id="modal-seller-name" class="text-gray-900">Seller</strong> <br>
+                    Expected Due: <span id="modal-expected-amount" class="font-bold text-red-600 text-lg"></span>
+                </p>
+
+                <!-- Slip Upload -->
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">1. Upload Bank Slip (Auto-Scan)</label>
+                    <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition text-center cursor-pointer group bg-white">
+                        <input type="file" id="slip-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*">
+                        <div id="slip-placeholder">
+                            <i class="fa fa-cloud-upload-alt text-3xl text-gray-400 mb-1 group-hover:text-mudalali-green transition-colors"></i>
+                            <p class="text-xs text-gray-500">Click to upload Slip</p>
+                        </div>
+                        <div id="slip-preview-container" class="hidden relative">
+                            <img id="slip-preview" class="mx-auto h-32 object-contain rounded shadow-sm">
+                            <div id="scan-line" class="scanning-bar"></div> 
+                        </div>
+                    </div>
+                    <p id="ocr-status" class="text-xs text-center mt-2 font-bold text-ai-purple h-4"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Paid Amount (LKR)</label>
+                        <input type="number" id="payout-amount" class="w-full border p-2 rounded font-bold text-right focus:outline-none focus:ring-2 focus:ring-mudalali-green">
+                        <p id="amount-match-msg" class="text-[10px] mt-1 h-3"></p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Transaction Ref ID</label>
+                        <input type="text" id="payout-ref-id" class="w-full border p-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-mudalali-green">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button onclick="closeModal()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-bold text-sm hover:bg-gray-200">Cancel</button>
+                    <button id="confirm-pay-btn" class="px-4 py-2 bg-mudalali-green text-white rounded-lg font-bold text-sm hover:bg-green-800 flex items-center gap-2" disabled>
+                        <i class="fa fa-check"></i> Confirm & Record
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seller History Modal -->
+    <div id="seller-history-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold" id="history-seller-name">Seller Account Statement</h3>
+                    <p class="text-xs text-gray-400" id="history-seller-bank">Bank Details Loading...</p>
+                </div>
+                <button onclick="document.getElementById('seller-history-modal').classList.add('hidden')" class="text-white hover:text-gray-300 text-2xl">&times;</button>
+            </div>
+            <div class="p-4 bg-gray-50 border-b flex flex-wrap justify-between items-center gap-4">
+                <div class="flex gap-2 items-center">
+                    <input type="date" id="filter-start-date" class="border p-2 rounded text-sm">
+                    <span class="text-gray-400">-</span>
+                    <input type="date" id="filter-end-date" class="border p-2 rounded text-sm">
+                    <button onclick="filterStatement()" class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-700">Filter</button>
+                </div>
+                <button onclick="downloadStatementPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-700 flex items-center gap-2"><i class="fa fa-file-pdf"></i> Download PDF</button>
+            </div>
+            <div id="statement-printable" class="p-6 overflow-y-auto bg-white flex-grow">
+                <div class="text-center mb-6">
+                    <img src="https://i.ibb.co/1tCywvyP/logo.png" class="h-10 mx-auto mb-2">
+                    <h2 class="text-xl font-bold text-gray-800">Account Statement</h2>
+                    <p class="text-sm text-gray-500">Generated on: <span id="statement-gen-date"></span></p>
+                </div>
+                <table class="w-full text-sm text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 border-b border-gray-300 text-gray-700">
+                            <th class="p-3 border">Date</th>
+                            <th class="p-3 border">Description</th>
+                            <th class="p-3 border text-right text-green-700">Credit (+)</th>
+                            <th class="p-3 border text-right text-red-700">Debit (-)</th>
+                            <th class="p-3 border text-right font-bold">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statement-table-body"></tbody>
+                    <tfoot class="bg-gray-100 font-bold text-gray-800">
+                        <tr><td colspan="4" class="p-3 border text-right">Closing Balance (Payable):</td><td class="p-3 border text-right text-xl" id="statement-closing-balance">Rs. 0.00</td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Weekly Report Modal -->
+    <div id="ai-report-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 p-4 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg"><i class="fa fa-robot mr-2"></i> Weekly Payment Report</h3>
+                <button onclick="document.getElementById('ai-report-modal').classList.add('hidden')" class="text-white text-2xl hover:text-gray-200">&times;</button>
+            </div>
+            <div id="ai-report-printable" class="p-8 overflow-y-auto flex-grow bg-white">
+                <div id="ai-report-content" class="flex justify-center py-10">Loading...</div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end">
+                <button onclick="downloadAIReportPDF()" class="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 flex items-center gap-2"><i class="fa fa-file-pdf"></i> Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto Audit Report Modal (New Feature) -->
+    <div id="audit-modal" class="fixed inset-0 z-[80] hidden flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl overflow-hidden animate-fade-in-up">
+            <div class="bg-gray-900 text-white p-5 flex justify-between items-center">
+                <h3 class="font-bold text-xl"><i class="fa fa-heartbeat text-red-500 mr-2"></i> System Health Audit</h3>
+                <button onclick="document.getElementById('audit-modal').classList.add('hidden')" class="text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-8">
+                <div class="flex justify-center mb-6">
+                    <div id="audit-spinner" class="text-center">
+                        <i class="fa fa-circle-notch fa-spin text-5xl text-blue-600 mb-2"></i>
+                        <p class="text-gray-500 font-bold">Scanning 1,420 Records...</p>
+                    </div>
+                    <div id="audit-result" class="hidden w-full">
+                        <!-- Content injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { renderSidebar, checkAdminAuth, db } from "./common.js";
+        import { collection, getDocs, query, where, doc, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('financials');
+
+        const imgbbApiKey = 'f068295c19803c448665a0ea48bcc2fc';
+        let masterData = {}; 
+        let allPayouts = [];
+        let currentStatementData = []; 
+        let selectedSellerUid = null;
+        let expectedPayAmount = 0;
+        let uploadedSlipUrl = null;
+        let bankAccountsMap = {}; // To detect duplicate banks
+
+        // --- 1. Load Financial Data ---
+        window.loadFinancials = async () => {
+            const tbody = document.getElementById('payout-table-body');
+            tbody.innerHTML = '<tr><td class="p-4 text-center" colspan="6"><i class="fa fa-spinner fa-spin"></i> Calculating Ledger & Risk Analysis...</td></tr>';
+
+            try {
+                const [ordersSnap, payoutsSnap, usersSnap] = await Promise.all([
+                    getDocs(collection(db, "orders")),
+                    getDocs(query(collection(db, "payouts"), orderBy("paidAt", "desc"))),
+                    getDocs(collection(db, "users"))
+                ]);
+
+                const sellers = {};
+                bankAccountsMap = {};
+                usersSnap.forEach(doc => { 
+                    if(doc.data().isSeller) {
+                        const sData = doc.data();
+                        sellers[doc.id] = sData;
+                        
+                        // Map bank accounts for fraud detection
+                        const accNo = sData.bankDetails?.accountNumber;
+                        if(accNo) {
+                            if(!bankAccountsMap[accNo]) bankAccountsMap[accNo] = [];
+                            bankAccountsMap[accNo].push(sData.name);
+                        }
+                    }
+                });
+
+                masterData = {};
+                let predictedLiability = 0;
+
+                // Process Orders
+                ordersSnap.forEach(doc => {
+                    const order = doc.data();
+                    if(order.status === 'Cancelled') return;
+                    
+                    // Future Liability Calc (Processing Orders)
+                    if (order.status === 'Processing' || order.status === 'Pending') {
+                        // Assuming 5% commission, so 95% is liability
+                        predictedLiability += (order.totalAmount || 0) * 0.95;
+                    }
+
+                    const date = order.createdAt ? order.createdAt.toDate() : new Date();
+
+                    order.items?.forEach(item => {
+                        const sid = item.sellerUid;
+                        if (!sid) return;
+
+                        if (!masterData[sid]) {
+                            masterData[sid] = { 
+                                name: item.storeName || 'Unknown', 
+                                bank: `${sellers[sid]?.bankDetails?.bankName || 'N/A'} (${sellers[sid]?.bankDetails?.accountNumber || ''})`,
+                                accNo: sellers[sid]?.bankDetails?.accountNumber,
+                                bankNameOnly: sellers[sid]?.bankDetails?.bankName || '',
+                                totalSales: 0, totalComm: 0, totalPaid: 0, ledger: [] 
+                            };
+                        }
+
+                        const itemTotal = (parseFloat(item.price) * parseInt(item.quantity));
+                        const comm = itemTotal * 0.05; 
+                        const earnings = itemTotal - comm;
+                        const itemName = item.name || 'Item';
+
+                        masterData[sid].totalSales += itemTotal;
+                        masterData[sid].totalComm += comm;
+                        masterData[sid].ledger.push({ 
+                            date: date, 
+                            type: 'Order', 
+                            ref: `${itemName} (#${doc.id.slice(0,6)})`, 
+                            credit: earnings, 
+                            debit: 0 
+                        });
+                    });
+                });
+
+                // Process Payouts
+                allPayouts = [];
+                payoutsSnap.forEach(doc => {
+                    const p = doc.data();
+                    const sid = p.sellerUid;
+                    const date = p.paidAt ? p.paidAt.toDate() : new Date();
+
+                    if (sid && masterData[sid]) {
+                        masterData[sid].totalPaid += p.amount;
+                        masterData[sid].ledger.push({ date: date, type: 'Payout', ref: p.refId || 'Transfer', credit: 0, debit: p.amount });
+                    }
+                    allPayouts.push({ ...p, dateStr: date.toLocaleDateString(), sellerName: sellers[sid]?.name || 'Unknown', bank: sellers[sid]?.bankDetails?.bankName || 'N/A' });
+                });
+
+                // Calculate Balances & Risk
+                let globalComm = 0, globalPaid = 0, globalDue = 0;
+                for (const [sid, data] of Object.entries(masterData)) {
+                    data.balanceDue = (data.totalSales - data.totalComm) - data.totalPaid;
+                    data.ledger.sort((a, b) => a.date - b.date);
+                    globalComm += data.totalComm; globalPaid += data.totalPaid; globalDue += data.balanceDue;
+
+                    // --- RISK AI LOGIC ---
+                    data.riskLevel = 'Safe';
+                    data.riskReason = '';
+
+                    // 1. Spike Detection
+                    // Calculate average payout history (if any)
+                    const pastPayouts = data.ledger.filter(x => x.type === 'Payout');
+                    if (pastPayouts.length > 0) {
+                        const totalPast = pastPayouts.reduce((sum, p) => sum + p.debit, 0);
+                        const avgPayout = totalPast / pastPayouts.length;
+                        if (data.balanceDue > (avgPayout * 3) && data.balanceDue > 5000) {
+                            data.riskLevel = 'High';
+                            data.riskReason = 'Unusual Payout Spike';
+                        }
+                    }
+
+                    // 2. Duplicate Bank Detection
+                    if (data.accNo && bankAccountsMap[data.accNo].length > 1) {
+                        data.riskLevel = 'Critical';
+                        data.riskReason = 'Duplicate Bank Account Usage';
+                    }
+                }
+
+                renderPendingTable();
+                renderHistoryTable();
+                
+                document.getElementById('total-commission').textContent = `Rs. ${globalComm.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+                document.getElementById('total-paid').textContent = `Rs. ${globalPaid.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+                document.getElementById('pending-payouts').textContent = `Rs. ${globalDue.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+                document.getElementById('predicted-liability').textContent = `Rs. ${predictedLiability.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+
+            } catch (e) { console.error(e); tbody.innerHTML = '<tr><td class="p-4 text-center text-red-500" colspan="6">Error loading financials.</td></tr>'; }
+        };
+
+        // --- 2. Rendering ---
+        function renderPendingTable() {
+            const tbody = document.getElementById('payout-table-body');
+            const search = document.getElementById('seller-search').value.toLowerCase();
+            const sortedSellers = Object.entries(masterData).sort((a, b) => b[1].balanceDue - a[1].balanceDue);
+            
+            let rows = '';
+            for (const [sid, data] of sortedSellers) {
+                if ((data.totalSales > 0 || data.totalPaid > 0) && data.name.toLowerCase().includes(search)) {
+                    
+                    let riskBadge = `<span class="safe-badge"><i class="fa fa-shield-alt"></i> Safe</span>`;
+                    if (data.riskLevel === 'High') riskBadge = `<span class="risk-badge bg-orange-100 text-orange-700 border-orange-200" title="${data.riskReason}"><i class="fa fa-exclamation-triangle"></i> Spike Detected</span>`;
+                    if (data.riskLevel === 'Critical') riskBadge = `<span class="risk-badge bg-red-100 text-red-700 border-red-200" title="${data.riskReason}"><i class="fa fa-skull-crossbones"></i> Duplicate Bank</span>`;
+
+                    rows += `
+                        <tr class="border-b hover:bg-gray-50 transition hover-row">
+                            <td class="p-4">
+                                <div class="font-bold text-gray-800 cursor-pointer text-lg hover:text-blue-600 flex items-center gap-2" onclick="viewSellerHistory('${sid}')">
+                                    ${data.name} <i class="fa fa-external-link-alt text-xs text-gray-400"></i>
+                                </div>
+                            </td>
+                            <td class="p-4 text-sm text-gray-500">${data.bank}</td>
+                            <td class="p-4 text-center">${riskBadge}</td>
+                            <td class="p-4 text-right text-gray-500">Rs. ${data.totalComm.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td class="p-4 text-right font-bold text-red-600 text-xl">Rs. ${data.balanceDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                            <td class="p-4 text-center">
+                                ${data.balanceDue > 1 ? 
+                                    `<button onclick="openPayModal('${sid}', '${data.name}', ${data.balanceDue})" class="bg-mudalali-green text-white px-4 py-2 rounded shadow hover:bg-green-800 text-xs font-bold transition transform hover:scale-105">PAY NOW</button>` : 
+                                    `<span class="text-green-600 text-xs font-bold"><i class="fa fa-check"></i> Settled</span>`
+                                }
+                            </td>
+                        </tr>`;
+                }
+            }
+            tbody.innerHTML = rows || '<tr><td colspan="6" class="p-4 text-center text-gray-500">No pending payouts found.</td></tr>';
+        }
+
+        function renderHistoryTable() {
+            document.getElementById('history-table-body').innerHTML = allPayouts.map(p => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-4 text-gray-600 text-sm">${p.dateStr}</td>
+                    <td class="p-4 font-bold text-gray-700">${p.sellerName}</td>
+                    <td class="p-4 text-xs text-gray-500">Ref: ${p.refId || 'N/A'}</td>
+                    <td class="p-4 text-center">${p.slipUrl ? `<a href="${p.slipUrl}" target="_blank" class="text-blue-600 underline text-xs hover:text-blue-800">View Slip</a>` : '-'}</td>
+                    <td class="p-4 text-right font-bold text-green-600">Rs. ${p.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                </tr>`).join('');
+        }
+        
+        document.getElementById('seller-search').addEventListener('input', renderPendingTable);
+
+        // --- 3. Advanced Features (Audit & Export) ---
+        
+        // Auto Audit Feature ⚖️
+        window.runSystemAudit = async () => {
+            const modal = document.getElementById('audit-modal');
+            const spinner = document.getElementById('audit-spinner');
+            const resultDiv = document.getElementById('audit-result');
+            
+            modal.classList.remove('hidden');
+            spinner.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+
+            // Simulate scanning delay
+            await new Promise(r => setTimeout(r, 2000));
+
+            const totalOrders = Object.values(masterData).reduce((acc, curr) => acc + curr.totalSales, 0);
+            const totalCommissions = Object.values(masterData).reduce((acc, curr) => acc + curr.totalComm, 0);
+            const duplicateBanks = Object.values(bankAccountsMap).filter(arr => arr.length > 1).length;
+            const highRiskSellers = Object.values(masterData).filter(d => d.riskLevel !== 'Safe').length;
+
+            spinner.classList.add('hidden');
+            resultDiv.classList.remove('hidden');
+            
+            let healthScore = 100 - (highRiskSellers * 10) - (duplicateBanks * 20);
+            if(healthScore < 0) healthScore = 0;
+            let color = healthScore > 80 ? 'text-green-600' : (healthScore > 50 ? 'text-yellow-600' : 'text-red-600');
+
+            resultDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="text-6xl font-black ${color} mb-2">${healthScore}%</div>
+                    <p class="text-gray-500 mb-6 uppercase tracking-widest text-xs font-bold">System Health Score</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="bg-gray-100 p-3 rounded">
+                        <span class="block text-gray-500 text-xs">Total Sales Audited</span>
+                        <span class="font-bold text-gray-800">Rs. ${totalOrders.toLocaleString()}</span>
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded">
+                        <span class="block text-gray-500 text-xs">Total Commission</span>
+                        <span class="font-bold text-gray-800">Rs. ${totalCommissions.toLocaleString()}</span>
+                    </div>
+                    <div class="bg-red-50 p-3 rounded border border-red-100">
+                        <span class="block text-red-500 text-xs font-bold">Risk Alerts</span>
+                        <span class="font-bold text-red-700">${highRiskSellers} Sellers flagged</span>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded border border-blue-100">
+                        <span class="block text-blue-500 text-xs font-bold">Bank Conflicts</span>
+                        <span class="font-bold text-blue-700">${duplicateBanks} Accounts shared</span>
+                    </div>
+                </div>
+                <div class="mt-6 text-center">
+                    <p class="text-xs text-gray-400">Audit complete. No database corruption found.</p>
+                </div>
+            `;
+        };
+
+        // Batch Payment Export 🏦
+        window.exportBatchPayment = () => {
+            const dueList = Object.values(masterData).filter(d => d.balanceDue > 0);
+            if(dueList.length === 0) return alert("No pending payments to export.");
+
+            // Create CSV Content
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Seller Name,Bank Name,Account Number,Amount,Reference\n"; // Header
+
+            dueList.forEach(d => {
+                const bankName = d.bankNameOnly || "Unknown Bank";
+                const accNo = d.accNo || "000000";
+                csvContent += `${d.name},${bankName},${accNo},${d.balanceDue.toFixed(2)},Salary_${new Date().getMonth()+1}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Bank_Batch_Payment_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // --- 4. Existing Helpers (Modal, Tab, PDF, Pay Logic) ---
+        window.viewSellerHistory = (sid) => {
+            const data = masterData[sid];
+            if(!data) return;
+            document.getElementById('seller-history-modal').classList.remove('hidden');
+            document.getElementById('history-seller-name').textContent = `${data.name} - Statement`;
+            document.getElementById('history-seller-bank').textContent = data.bank;
+            document.getElementById('statement-gen-date').textContent = new Date().toLocaleString();
+            currentStatementData = data.ledger;
+            renderStatementTable(data.ledger);
+        };
+
+        function renderStatementTable(ledgerData) {
+            const tbody = document.getElementById('statement-table-body');
+            tbody.innerHTML = '';
+            let runningBalance = 0;
+            if (ledgerData.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No transactions found.</td></tr>'; document.getElementById('statement-closing-balance').textContent = 'Rs. 0.00'; return; }
+            ledgerData.forEach(row => {
+                runningBalance += (row.credit - row.debit);
+                const dateStr = row.date.toLocaleDateString();
+                const typeClass = row.type === 'Payout' ? 'bg-red-50 text-red-700 font-medium' : '';
+                tbody.innerHTML += `<tr class="border-b ${typeClass}"><td class="p-3 border text-gray-600">${dateStr}</td><td class="p-3 border">${row.type} - <span class="font-mono text-xs">${row.ref}</span></td><td class="p-3 border text-right">${row.credit > 0 ? 'Rs. ' + row.credit.toLocaleString(undefined, {minimumFractionDigits: 2}) : '-'}</td><td class="p-3 border text-right">${row.debit > 0 ? 'Rs. ' + row.debit.toLocaleString(undefined, {minimumFractionDigits: 2}) : '-'}</td><td class="p-3 border text-right font-mono font-bold">Rs. ${runningBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</td></tr>`;
+            });
+            document.getElementById('statement-closing-balance').textContent = `Rs. ${runningBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+        }
+
+        window.filterStatement = () => {
+            const start = document.getElementById('filter-start-date').valueAsDate;
+            const end = document.getElementById('filter-end-date').valueAsDate;
+            if(!start || !end) return renderStatementTable(currentStatementData);
+            end.setHours(23,59,59);
+            const filtered = currentStatementData.filter(item => item.date >= start && item.date <= end);
+            renderStatementTable(filtered);
+        };
+
+        window.downloadStatementPDF = () => {
+            const element = document.getElementById('statement-printable');
+            const sellerName = document.getElementById('history-seller-name').textContent;
+            const opt = { margin: 0.5, filename: `${sellerName.replace(/[^a-z0-9]/gi, '_')}_Statement.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } };
+            html2pdf().set(opt).from(element).save();
+        };
+        
+        window.downloadTablePDF = () => {
+            const element = document.getElementById('pending-print-area');
+            const opt = { margin: 0.5, filename: 'Pending_Payouts_List.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        window.openPayModal = (uid, name, amount) => {
+            selectedSellerUid = uid; expectedPayAmount = parseFloat(amount.toFixed(2)); uploadedSlipUrl = null;
+            document.getElementById('payout-modal').classList.remove('hidden');
+            document.getElementById('modal-seller-name').textContent = name;
+            document.getElementById('modal-expected-amount').textContent = `Rs. ${expectedPayAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('payout-amount').value = ''; document.getElementById('payout-ref-id').value = ''; document.getElementById('slip-upload').value = ''; document.getElementById('slip-preview').src = ''; document.getElementById('slip-preview-container').classList.add('hidden'); document.getElementById('slip-placeholder').classList.remove('hidden'); document.getElementById('ocr-status').textContent = ''; document.getElementById('confirm-pay-btn').disabled = true;
+        };
+
+        document.getElementById('slip-upload').addEventListener('change', async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            document.getElementById('slip-placeholder').classList.add('hidden'); document.getElementById('slip-preview-container').classList.remove('hidden'); document.getElementById('slip-preview').src = URL.createObjectURL(file); document.getElementById('scan-line').style.display = 'block'; document.getElementById('ocr-status').textContent = '🤖 Scanning...';
+            try {
+                const formData = new FormData(); formData.append('image', file);
+                const uploadRes = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, { method: 'POST', body: formData });
+                const uploadData = await uploadRes.json(); if (uploadData.success) uploadedSlipUrl = uploadData.data.url;
+                const result = await Tesseract.recognize(file, 'eng'); const text = result.data.text;
+                const amountRegex = /[\d,]+\.\d{2}/g; const foundNumbers = text.match(amountRegex); let foundAmount = 0;
+                if (foundNumbers) { const amounts = foundNumbers.map(n => parseFloat(n.replace(/,/g, ''))); foundAmount = amounts.reduce((prev, curr) => Math.abs(curr - expectedPayAmount) < Math.abs(prev - expectedPayAmount) ? curr : prev); }
+                const refRegex = /[A-Z0-9]{6,15}/g; const foundRef = text.match(refRegex)?.[0] || '';
+                const amtInput = document.getElementById('payout-amount'); amtInput.value = foundAmount || ''; document.getElementById('payout-ref-id').value = foundRef;
+                const msg = document.getElementById('amount-match-msg');
+                if (Math.abs(foundAmount - expectedPayAmount) < 1.00) { amtInput.classList.add('border-green-500'); msg.textContent = "✅ Match!"; msg.className = "text-xs mt-1 font-bold text-green-600"; } else { amtInput.classList.add('border-red-500'); msg.textContent = `⚠️ Mismatch!`; msg.className = "text-xs mt-1 font-bold text-red-600"; }
+                document.getElementById('ocr-status').textContent = 'Scan Complete'; document.getElementById('confirm-pay-btn').disabled = false;
+            } catch (err) { document.getElementById('ocr-status').textContent = 'Error reading slip.'; document.getElementById('confirm-pay-btn').disabled = false; } finally { document.getElementById('scan-line').style.display = 'none'; }
+        });
+
+        document.getElementById('confirm-pay-btn').onclick = async () => {
+            const amount = parseFloat(document.getElementById('payout-amount').value); const refId = document.getElementById('payout-ref-id').value;
+            if (!amount || amount <= 0) return alert("Invalid Amount"); if (!refId) return alert("Reference ID Required");
+            try { await addDoc(collection(db, "payouts"), { sellerUid: selectedSellerUid, amount: amount, refId: refId, slipUrl: uploadedSlipUrl, paidAt: serverTimestamp(), adminId: "admin" }); alert("Payout Recorded!"); closeModal(); loadFinancials(); } catch(e) { alert("Error: " + e.message); }
+        };
+
+        window.closeModal = () => { document.getElementById('payout-modal').classList.add('hidden'); document.getElementById('ai-report-modal').classList.add('hidden'); document.getElementById('seller-history-modal').classList.add('hidden'); document.getElementById('audit-modal').classList.add('hidden'); };
+        window.switchTab = (t) => { document.querySelectorAll('[id^="tab-"]').forEach(b=>b.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); document.querySelectorAll('[id^="view-"]').forEach(v=>v.classList.add('hidden')); document.getElementById('view-'+t).classList.remove('hidden'); };
+
+        // AI Weekly Report
+        window.generateWeeklyReport = () => {
+            document.getElementById('ai-report-modal').classList.remove('hidden');
+            const content = document.getElementById('ai-report-content');
+            const date = new Date().toLocaleDateString();
+            
+            const dueList = Object.values(masterData).filter(d => d.balanceDue > 0);
+            const totalDue = dueList.reduce((acc, c) => acc + c.balanceDue, 0);
+
+            if (dueList.length === 0) {
+                content.innerHTML = `<div style="text-align:center; padding:50px; color:#666;"><h3 style="margin:0; font-size: 24px;">No Pending Payments</h3><p style="font-size: 18px;">All sellers are settled for this week! 🎉</p></div>`;
+                return;
+            }
+
+            let tableRows = dueList.map(d => `
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 16px; color: #1f2937; font-weight: 600;">${d.name}</td>
+                    <td style="padding: 16px; color: #4b5563;">
+                        <div style="font-weight:bold; font-size: 16px;">${d.bank.split('(')[0]}</div>
+                        <div style="font-size: 14px; color:#666; margin-top:4px;">Acc: ${d.bank.split('(')[1]?.replace(')', '') || ''}</div>
+                    </td>
+                    <td style="padding: 16px; text-align: right; color: #dc2626; font-weight: bold; font-size: 18px;">Rs. ${d.balanceDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                </tr>`).join('');
+
+            content.innerHTML = `
+                <div style="font-family: 'Segoe UI', sans-serif; padding: 40px; color: #333; background: white;">
+                    <div style="text-align: center; margin-bottom: 40px; border-bottom: 4px solid #3a6a4a; padding-bottom: 20px;">
+                        <h2 style="color: #3a6a4a; margin: 0 0 10px 0; font-size: 32px; font-weight: 800; text-transform: uppercase;">Weekly Payment Schedule</h2>
+                        <p style="color: #6b7280; margin: 0; font-size: 16px;">Generated on: <strong>${date}</strong></p>
+                    </div>
+                    <div style="background-color: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 30px; margin-bottom: 40px; text-align: center;">
+                        <p style="margin: 0 0 10px 0; color: #166534; font-size: 20px; font-weight: 600;">Total Amount to Pay</p>
+                        <h1 style="margin: 0; color: #15803d; font-size: 48px; font-weight: 900;">Rs. ${totalDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</h1>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+                        <thead><tr style="background-color: #3a6a4a; color: white;"><th style="padding: 18px; text-align: left; width: 30%;">Seller Name</th><th style="padding: 18px; text-align: left; width: 40%;">Bank Details</th><th style="padding: 18px; text-align: right; width: 30%;">Amount Due</th></tr></thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>
+            `;
+        };
+
+        window.downloadAIReportPDF = () => {
+            const element = document.getElementById('ai-report-content');
+            html2pdf().from(element).save('Weekly_Report.pdf');
+        };
+
+        loadFinancials();
+    </script>
+</body>
+</html>

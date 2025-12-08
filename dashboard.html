@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TUTU Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        // Rose Theme Colors
+                        'tutu-pink': {
+                            DEFAULT: '#db2777', // Hot Pink
+                            dark: '#be185d',    // Darker Pink
+                            light: '#fbcfe8'    // Light Pink
+                        },
+                        'ai-purple': '#8b5cf6' 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .ai-pulse { animation: pulse-purple 2s infinite; }
+        @keyframes pulse-purple { 0% { box-shadow: 0 0 0 0 rgba(219, 39, 119, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(219, 39, 119, 0); } 100% { box-shadow: 0 0 0 0 rgba(219, 39, 119, 0); } }
+        .filter-dropdown { transition: all 0.3s ease; transform-origin: top right; }
+        .filter-dropdown.hidden { transform: scale(0.95); opacity: 0; pointer-events: none; }
+        
+        /* Custom Scrollbar for style */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #db2777; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Admin Dashboard</h1>
+            
+            <button onclick="openAIModal()" class="bg-gradient-to-r from-tutu-pink to-purple-600 text-white px-6 py-2.5 rounded-full shadow-lg hover:shadow-xl transition transform hover:-translate-y-1 flex items-center gap-2 border border-pink-200">
+                <i class="fa fa-wand-magic-sparkles"></i> AI Report
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-tutu-pink transition hover:shadow-md">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Revenue</p>
+                <h2 class="text-3xl font-bold mt-2 text-gray-800" id="stat-revenue">Rs. 0.00</h2>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500 transition hover:shadow-md">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Orders</p>
+                <h2 class="text-3xl font-bold mt-2 text-gray-800" id="stat-orders">0</h2>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-yellow-500 transition hover:shadow-md">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Pending Sellers</p>
+                <h2 class="text-3xl font-bold mt-2 text-gray-800">0</h2>
+                <a href="sellers.html" class="text-yellow-600 text-xs font-bold underline mt-1 block hover:text-yellow-700">Review now</a>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-500 transition hover:shadow-md">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Customers</p>
+                <h2 class="text-3xl font-bold mt-2 text-gray-800" id="stat-customers">0</h2>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm overflow-visible border border-gray-100 relative">
+            <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <h3 class="font-bold text-xl text-gray-800">Recent Orders</h3>
+                
+                <div class="flex gap-3 w-full md:w-auto">
+                    <div class="relative flex-grow md:w-80">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fa fa-search text-gray-400"></i>
+                        </span>
+                        <input type="text" id="order-search" class="w-full py-2.5 pl-10 pr-4 text-sm text-gray-700 bg-pink-50/30 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-tutu-pink focus:border-transparent transition-all" placeholder="Search by Item or Seller...">
+                    </div>
+
+                    <div class="relative">
+                        <button onclick="toggleFilterMenu()" class="bg-white border border-gray-200 text-gray-600 hover:text-tutu-pink hover:border-tutu-pink px-4 py-2.5 rounded-xl shadow-sm transition-all">
+                            <i class="fa fa-filter"></i>
+                        </button>
+                        
+                        <div id="filter-menu" class="filter-dropdown hidden absolute right-0 mt-3 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 z-20 p-5">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-bold text-gray-700 text-sm">Filter Orders</h4>
+                                <button onclick="resetFilters()" class="text-xs text-tutu-pink hover:text-tutu-pink-dark font-semibold hover:underline">Reset</button>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1.5">Year</label>
+                                    <select id="filter-year" class="w-full p-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-tutu-pink focus:outline-none">
+                                        <option value="">All Years</option>
+                                        <option value="2024">2024</option>
+                                        <option value="2025">2025</option>
+                                        <option value="2026">2026</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1.5">Month</label>
+                                    <select id="filter-month" class="w-full p-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-tutu-pink focus:outline-none">
+                                        <option value="">All Months</option>
+                                        <option value="0">January</option>
+                                        <option value="1">February</option>
+                                        <option value="2">March</option>
+                                        <option value="3">April</option>
+                                        <option value="4">May</option>
+                                        <option value="5">June</option>
+                                        <option value="6">July</option>
+                                        <option value="7">August</option>
+                                        <option value="8">September</option>
+                                        <option value="9">October</option>
+                                        <option value="10">November</option>
+                                        <option value="11">December</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-gray-500 block mb-1.5">Price Range (LKR)</label>
+                                    <div class="flex gap-2">
+                                        <input type="number" id="filter-min-price" placeholder="Min" class="w-1/2 p-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-tutu-pink focus:outline-none">
+                                        <input type="number" id="filter-max-price" placeholder="Max" class="w-1/2 p-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-tutu-pink focus:outline-none">
+                                    </div>
+                                </div>
+                                <button onclick="applyFilters()" class="w-full bg-tutu-pink text-white py-2.5 rounded-xl font-bold text-sm hover:bg-tutu-pink-dark transition shadow-md">Apply Filters</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-pink-50/50 text-gray-700 uppercase text-xs font-bold border-b border-pink-100">
+                        <tr>
+                            <th class="p-4">Order ID</th>
+                            <th class="p-4">Customer</th>
+                            <th class="p-4">Item</th>
+                            <th class="p-4">Seller</th> 
+                            <th class="p-4 text-center">Image</th>
+                            <th class="p-4 text-right">Amount</th>
+                            <th class="p-4 text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-orders-table" class="divide-y divide-gray-100">
+                        <tr><td class="p-6 text-center text-gray-400" colspan="7"><i class="fas fa-spinner fa-spin mr-2"></i> Loading Data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="image-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black bg-opacity-90 backdrop-blur-sm transition-opacity" onclick="closeImageModal()">
+        <div class="relative max-w-2xl max-h-[90vh] p-2">
+            <img id="modal-img" src="" class="max-w-full max-h-[80vh] rounded-xl shadow-2xl border-2 border-white/20">
+            <button class="absolute -top-12 right-0 text-white text-2xl hover:text-tutu-pink bg-white/10 rounded-full w-10 h-10 flex items-center justify-center transition-colors">&times;</button>
+        </div>
+    </div>
+
+    <div id="ai-report-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-md transition-opacity">
+        <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden transform transition-all scale-100 flex flex-col max-h-[90vh]">
+            <div class="bg-gradient-to-r from-tutu-pink to-purple-600 p-5 flex justify-between items-center flex-shrink-0">
+                <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa fa-wand-magic-sparkles"></i> TUTU AI Business Insight</h3>
+                <button onclick="document.getElementById('ai-report-modal').classList.add('hidden')" class="text-white hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition"><i class="fa fa-times"></i></button>
+            </div>
+            
+            <div class="p-5 bg-gray-50 border-b flex justify-between items-center flex-wrap gap-4">
+                <div class="flex gap-3 items-center">
+                    <label class="text-sm font-bold text-gray-700">Language:</label>
+                    <div class="relative">
+                        <select id="ai-language" class="appearance-none border border-gray-300 rounded-lg pl-3 pr-8 py-2 text-sm focus:ring-2 focus:ring-tutu-pink focus:outline-none cursor-pointer bg-white">
+                            <option value="English">English</option>
+                            <option value="Sinhala">Sinhala (සිංහල)</option>
+                            <option value="Tamil">Tamil (தமிழ்)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <i class="fa fa-chevron-down text-xs"></i>
+                        </div>
+                    </div>
+                    <button onclick="generateReportContent()" class="bg-tutu-pink text-white px-4 py-2 rounded-lg text-sm hover:bg-tutu-pink-dark font-bold shadow-md transition-all">Generate</button>
+                </div>
+                <button onclick="downloadPDF()" id="download-pdf-btn" class="text-gray-600 hover:text-red-600 text-sm font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-white border border-gray-200 px-3 py-2 rounded-lg hover:border-red-200 transition-colors" disabled>
+                    <i class="fa fa-file-pdf text-red-500"></i> Download PDF
+                </button>
+            </div>
+
+            <div id="ai-report-printable" class="p-8 overflow-y-auto flex-grow bg-white">
+                <div id="ai-report-content" class="prose max-w-none text-gray-700 text-sm leading-relaxed space-y-4">
+                    <div class="flex flex-col items-center justify-center py-16 text-gray-300">
+                        <i class="fa fa-robot text-6xl mb-4 text-pink-100"></i>
+                        <p class="font-medium text-gray-400">Select a language and click "Generate" to analyze your store.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { renderSidebar, checkAdminAuth, db } from "./common.js";
+        import { collection, onSnapshot, query, orderBy, limit, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('dashboard'); // Ensure common.js has updated sidebar classes for 'tutu-pink'
+
+        let allOrders = []; // Store orders locally for search & filter
+
+        // 1. Load Orders Real-time
+        function loadOrders() {
+            const tbody = document.getElementById('recent-orders-table');
+            // Getting last 100 orders to allow better filtering
+            const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(100));
+            
+            onSnapshot(q, (snap) => {
+                allOrders = [];
+                if(snap.empty) {
+                    tbody.innerHTML = '<tr><td class="p-8 text-center text-gray-500" colspan="7">No orders yet.</td></tr>';
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    // Add a JS Date object for easier filtering
+                    const data = doc.data();
+                    const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
+                    allOrders.push({ id: doc.id, ...data, dateObj: dateObj });
+                });
+
+                applyFilters(); // Apply existing filters if any
+                updateStats(allOrders);
+            });
+        }
+
+        // 2. Filter Logic
+        window.toggleFilterMenu = () => {
+            document.getElementById('filter-menu').classList.toggle('hidden');
+        }
+
+        window.resetFilters = () => {
+            document.getElementById('filter-year').value = '';
+            document.getElementById('filter-month').value = '';
+            document.getElementById('filter-min-price').value = '';
+            document.getElementById('filter-max-price').value = '';
+            document.getElementById('order-search').value = '';
+            applyFilters();
+            document.getElementById('filter-menu').classList.add('hidden');
+        }
+
+        window.applyFilters = () => {
+            const searchTerm = document.getElementById('order-search').value.toLowerCase();
+            const year = document.getElementById('filter-year').value;
+            const month = document.getElementById('filter-month').value;
+            const minPrice = parseFloat(document.getElementById('filter-min-price').value) || 0;
+            const maxPrice = parseFloat(document.getElementById('filter-max-price').value) || Infinity;
+
+            const filtered = allOrders.filter(o => {
+                // Search
+                const customer = (o.customerInfo?.name || '').toLowerCase();
+                const hasItem = o.items?.some(i => i.name.toLowerCase().includes(searchTerm));
+                const hasSeller = o.items?.some(i => (i.storeName || 'TUTU Store').toLowerCase().includes(searchTerm));
+                const matchesSearch = customer.includes(searchTerm) || hasItem || hasSeller;
+
+                // Date Filter
+                let matchesDate = true;
+                if (year && o.dateObj.getFullYear() != year) matchesDate = false;
+                if (month && o.dateObj.getMonth() != month) matchesDate = false;
+
+                // Price Filter
+                const matchesPrice = o.totalAmount >= minPrice && o.totalAmount <= maxPrice;
+
+                return matchesSearch && matchesDate && matchesPrice;
+            });
+
+            renderTable(filtered);
+            document.getElementById('filter-menu').classList.add('hidden'); // Hide menu after apply
+        }
+
+        // 3. Render Table
+        function renderTable(orders) {
+            const tbody = document.getElementById('recent-orders-table');
+
+            if (orders.length === 0) {
+                tbody.innerHTML = '<tr><td class="p-8 text-center text-gray-500 italic" colspan="7">No matching orders found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = orders.map(o => {
+                const statusColors = {
+                    'Pending': 'bg-yellow-100 text-yellow-700',
+                    'Processing': 'bg-blue-100 text-blue-700',
+                    'Shipped': 'bg-purple-100 text-purple-700',
+                    'Delivered': 'bg-green-100 text-green-700',
+                    'Cancelled': 'bg-red-100 text-red-700'
+                };
+                const statusClass = statusColors[o.status] || 'bg-gray-100 text-gray-600';
+
+                const firstItem = o.items && o.items.length > 0 ? o.items[0] : { name: 'Unknown Item', imageUrl: '', storeName: 'System' };
+                const itemCount = o.items ? o.items.length : 0;
+                const itemText = itemCount > 1 ? `${firstItem.name} (+${itemCount - 1})` : firstItem.name;
+                const sellerName = firstItem.storeName || 'TUTU Store'; 
+
+                return `
+                    <tr class="border-b border-gray-50 hover:bg-pink-50/20 transition duration-150 group">
+                        <td class="p-4 font-mono text-xs text-gray-500">#${o.id.slice(0,6)}</td>
+                        <td class="p-4 font-bold text-gray-800">${o.customerInfo?.name || 'Guest'}</td>
+                        <td class="p-4 text-sm text-gray-600 max-w-xs truncate">${itemText}</td>
+                        <td class="p-4 text-sm text-tutu-pink font-semibold">${sellerName}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="window.showImage('${firstItem.imageUrl}')" class="text-gray-400 hover:text-tutu-pink transition bg-gray-100 group-hover:bg-white p-2 rounded-full shadow-sm">
+                                <i class="fa fa-image"></i>
+                            </button>
+                        </td>
+                        <td class="p-4 text-right font-bold text-gray-800">Rs. ${o.totalAmount.toFixed(2)}</td>
+                        <td class="p-4 text-center">
+                            <select onchange="window.updateStatus('${o.id}', this.value)" class="px-3 py-1 rounded-full text-xs font-bold border border-transparent cursor-pointer focus:outline-none focus:ring-2 focus:ring-tutu-pink ${statusClass} transition-colors">
+                                <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
+                                <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                                <option value="Delivered" ${o.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                                <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function updateStats(orders) {
+            let totalRev = 0;
+            orders.forEach(o => totalRev += o.totalAmount);
+            document.getElementById('stat-orders').textContent = orders.length;
+            document.getElementById('stat-revenue').textContent = `Rs. ${totalRev.toLocaleString()}`;
+        }
+
+        // Global Functions
+        window.showImage = (url) => {
+            const modal = document.getElementById('image-modal');
+            const img = document.getElementById('modal-img');
+            if(!url || url === 'undefined' || url.includes('placehold')) { 
+                Swal.fire({ icon: 'info', title: 'No Image', text: 'No specific image available for this item.', confirmButtonColor: '#db2777' });
+                return; 
+            }
+            img.src = url;
+            modal.classList.remove('hidden');
+        };
+
+        window.closeImageModal = () => {
+            document.getElementById('image-modal').classList.add('hidden');
+        };
+
+        window.updateStatus = async (docId, newStatus) => {
+            try {
+                const orderRef = doc(db, 'orders', docId);
+                await updateDoc(orderRef, { status: newStatus });
+                const toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+                toast.fire({ icon: 'success', title: `Order updated to ${newStatus}` });
+            } catch(e) {
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message });
+            }
+        };
+
+        document.getElementById('order-search').addEventListener('input', applyFilters);
+
+        // --- AI REPORT GENERATION ---
+        window.openAIModal = () => {
+            document.getElementById('ai-report-modal').classList.remove('hidden');
+        }
+
+        window.generateReportContent = async () => {
+            const contentDiv = document.getElementById('ai-report-content');
+            const lang = document.getElementById('ai-language').value;
+            const btn = document.getElementById('download-pdf-btn');
+            
+            btn.disabled = true;
+            contentDiv.innerHTML = '<div class="flex flex-col items-center justify-center py-12 gap-4"><i class="fa fa-wand-magic-sparkles text-5xl text-tutu-pink animate-pulse"></i><p class="text-tutu-pink-dark font-bold animate-pulse">Analyzing Data in ' + lang + '...</p></div>';
+
+            const totalRev = document.getElementById('stat-revenue').textContent;
+            const totalOrd = document.getElementById('stat-orders').textContent;
+            const recentItems = allOrders.slice(0, 5).map(o => o.items[0]?.name).join(", ");
+
+            try {
+                // Simulate API Call (Replace with your actual Gemini Call if needed)
+                await new Promise(r => setTimeout(r, 2000));
+                
+                let mockResponse = "";
+                
+                if (lang === "Sinhala") {
+                    mockResponse = `
+                        <h2 class="text-3xl font-bold mb-6 border-b border-pink-200 pb-3 text-gray-800">TUTU - ව්‍යාපාරික වාර්තාව</h2>
+                        
+                        <div class="bg-pink-50 p-4 rounded-lg mb-6 border-l-4 border-tutu-pink">
+                            <h3 class="text-lg font-bold text-tutu-pink-dark mb-2">1. විධායක සාරාංශය</h3>
+                            <p>දැනට ව්‍යාපාරයේ ආදායම <strong>${totalRev}</strong> ක් වන අතර, මුළු ඇණවුම් <strong>${totalOrd}</strong> ක් ලැබී ඇත. ව්‍යාපාරය සාර්ථක මට්ටමක පවතී.</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-gray-700 mb-2">2. විකුණුම් විශ්ලේෂණය</h3>
+                            <p>මෑත කාලීනව පාරිභෝගිකයින් වැඩිපුරම මිලදී ගෙන ඇත්තේ: <em class="text-gray-600">${recentItems}</em> වැනි භාණ්ඩයි.</p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-700 mb-2">3. යෝජනා</h3>
+                            <ul class="list-disc list-inside ml-4 text-gray-600 space-y-1">
+                                <li>වැඩිපුර අලෙවි වන භාණ්ඩ සඳහා වට්ටම් ලබා දීම.</li>
+                                <li>නව විකුණුම්කරුවන් බඳවා ගැනීම වේගවත් කිරීම.</li>
+                                <li>Social Media හරහා ප්‍රවර්ධනය වැඩි කිරීම.</li>
+                            </ul>
+                        </div>
+                    `;
+                } else if (lang === "Tamil") {
+                    mockResponse = `
+                        <h2 class="text-3xl font-bold mb-6 border-b border-pink-200 pb-3 text-gray-800">TUTU - வணிக அறிக்கை</h2>
+                        <div class="bg-pink-50 p-4 rounded-lg mb-6 border-l-4 border-tutu-pink">
+                            <h3 class="text-lg font-bold text-tutu-pink-dark mb-2">1. நிர்வாகச் சுருக்கம்</h3>
+                            <p>தற்போதைய வருமானம் <strong>${totalRev}</strong> மற்றும் மொத்த ஆர்டர்கள் <strong>${totalOrd}</strong>. வணிகம் நிலையாக உள்ளது.</p>
+                        </div>
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-gray-700 mb-2">2. விற்பனைப் போக்குகள்</h3>
+                            <p>சமீபத்திய பிரபலமான பொருட்கள்: <em>${recentItems}</em>.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-700 mb-2">3. பரிந்துரைகள்</h3>
+                            <ul class="list-disc list-inside ml-4 text-gray-600 space-y-1">
+                                <li>பிரபலமான பொருட்களுக்கு தள்ளுபடி வழங்கவும்.</li>
+                                <li>புதிய விற்பனையாளர்களைச் சேர்க்கவும்.</li>
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    mockResponse = `
+                        <h2 class="text-3xl font-bold mb-6 border-b border-pink-200 pb-3 text-gray-800">TUTU Store - Business Report</h2>
+                        <div class="bg-pink-50 p-4 rounded-lg mb-6 border-l-4 border-tutu-pink">
+                            <h3 class="text-lg font-bold text-tutu-pink-dark mb-2">1. Executive Summary</h3>
+                            <p>Current total revenue stands at <strong>${totalRev}</strong> with a total of <strong>${totalOrd}</strong> orders. Operations are showing positive momentum.</p>
+                        </div>
+                        <div class="mb-6">
+                            <h3 class="text-lg font-bold text-gray-700 mb-2">2. Sales Trends</h3>
+                            <p>Top trending items include: <em class="text-gray-600">${recentItems}</em>.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-700 mb-2">3. AI Recommendations</h3>
+                            <ul class="list-disc list-inside ml-4 text-gray-600 space-y-1">
+                                <li>Run promotional campaigns for top-selling categories.</li>
+                                <li>Engage with pending sellers to expand inventory.</li>
+                                <li>Analyze customer feedback for retention strategies.</li>
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                contentDiv.innerHTML = mockResponse;
+                btn.disabled = false; // Enable PDF button
+
+            } catch (e) {
+                contentDiv.innerHTML = `<p class="text-red-500 text-center py-10">Error generating report. Please try again.</p>`;
+            }
+        }
+
+        // PDF Download Function
+        window.downloadPDF = () => {
+            const element = document.getElementById('ai-report-printable');
+            const lang = document.getElementById('ai-language').value;
+            
+            const opt = {
+                margin:       0.5,
+                filename:     `TUTU_Report_${lang}_${new Date().toISOString().split('T')[0]}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+        loadOrders();
+
+    </script>
+</body>
+</html>

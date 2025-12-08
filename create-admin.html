@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Admin - TUTU</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        'tutu-pink': {
+                            light: '#fbcfe8',       
+                            DEFAULT: '#db2777',     
+                            dark: '#be185d',        
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 h-screen flex items-center justify-center font-sans">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-t-4 border-tutu-pink">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-user-plus text-2xl text-tutu-pink"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">Create New Admin</h1>
+            <p class="text-sm text-gray-500 mt-1">This tool creates a user with ADMIN privileges.</p>
+        </div>
+
+        <form id="create-admin-form" class="space-y-5">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Admin Email</label>
+                <input type="email" id="email" class="w-full p-3 border border-pink-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-tutu-pink bg-pink-50/20" placeholder="newadmin@tutu.com" required>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">Password</label>
+                <input type="password" id="password" class="w-full p-3 border border-pink-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-tutu-pink bg-pink-50/20" placeholder="Strong Password" required>
+            </div>
+            
+            <button type="submit" class="w-full bg-gray-800 text-white p-3 rounded-xl font-bold text-lg hover:bg-gray-900 shadow-md transition-all">
+                Create Admin User
+            </button>
+        </form>
+        
+        <p class="text-center text-xs text-red-400 mt-6 font-bold">
+            ⚠️ WARNING: Delete this file after creating the admin!
+        </p>
+    </div>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 🔥 ALUTH CONFIG EKA METANA 🔥
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKFinkyjgys2HOO_QpRoMosGYyTFEcIgE",
+            authDomain: "masterking-fa629.firebaseapp.com",
+            projectId: "masterking-fa629",
+            storageBucket: "masterking-fa629.firebasestorage.app",
+            messagingSenderId: "680021576286",
+            appId: "1:680021576286:web:52769441eeda5ab56f02cf",
+            measurementId: "G-9443L8L88Q"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const usersPath = `/users`; 
+
+        document.getElementById('create-admin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+
+            btn.disabled = true;
+            btn.innerText = "Creating...";
+
+            try {
+                // 1. Create User in Auth
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // 2. Save to Firestore with 'admin' role
+                await setDoc(doc(db, usersPath, user.uid), {
+                    email: email,
+                    role: 'admin', 
+                    createdAt: serverTimestamp(),
+                    isSeller: false
+                });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Admin Created!',
+                    text: 'User created successfully. You can now login.',
+                    confirmButtonColor: '#db2777'
+                }).then(() => {
+                    window.location.href = 'admin-login.html';
+                });
+
+            } catch (error) {
+                console.error(error);
+                let msg = error.message;
+                if(error.code === 'auth/email-already-in-use') {
+                    msg = "This email is already registered.";
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: msg,
+                    confirmButtonColor: '#db2777'
+                });
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        });
+    </script>
+</body>
+</html>
