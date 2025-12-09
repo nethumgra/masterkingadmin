@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-       const firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyDKFinkyjgys2HOO_QpRoMosGYyTFEcIgE",
   authDomain: "masterking-fa629.firebaseapp.com",
   projectId: "masterking-fa629",
@@ -23,99 +23,117 @@ export { auth, db };
 export function checkAdminAuth(requireAuth = true) {
     onAuthStateChanged(auth, async (user) => {
         const currentPath = window.location.pathname;
+        const pageName = currentPath.split('/').pop(); // Get the last part of URL
+
+        // Identify if we are on the login page
+        const isLoginPage = pageName === "" || pageName === "index.html" || pageName === "admin-login.html";
+
         if (user) {
+            // 1. Hardcoded Admin Check
             if (user.email === "admin@gmail.com") {
-                 if (currentPath.endsWith('index.html') || currentPath.endsWith('/admin/')) {
+                if (isLoginPage) {
                     window.location.href = "dashboard.html";
                 }
                 return;
             }
 
-            const userDocRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userDocRef);
+            // 2. Database Admin Check
+            try {
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
 
-            if (userDoc.exists() && userDoc.data().isAdmin === true) {
-                if (currentPath.endsWith('index.html') || currentPath.endsWith('/admin/')) {
-                    window.location.href = "dashboard.html";
-                }
-            } else {
-                if(typeof Swal !== 'undefined') {
-                    await Swal.fire({ icon: 'error', title: 'Access Denied', text: 'You do not have admin privileges.' });
+                // Check for 'isAdmin' (Legacy) OR 'role' === 'admin' (New)
+                if (userDoc.exists() && (userDoc.data().isAdmin === true || userDoc.data().role === 'admin')) {
+                    if (isLoginPage) {
+                        window.location.href = "dashboard.html";
+                    }
                 } else {
-                    alert("Access Denied");
+                    // Not an admin
+                    handleAccessDenied();
                 }
-                await signOut(auth);
-                window.location.href = "index.html";
+            } catch (error) {
+                console.error("Auth Error:", error);
+                handleAccessDenied();
             }
         } else {
-            if (requireAuth && !currentPath.endsWith('index.html')) {
+            // No user logged in
+            if (requireAuth && !isLoginPage) {
                 window.location.href = "index.html";
             }
         }
     });
 }
 
+async function handleAccessDenied() {
+    if(typeof Swal !== 'undefined') {
+        await Swal.fire({ 
+            icon: 'error', 
+            title: 'Access Denied', 
+            text: 'You do not have admin privileges.',
+            confirmButtonColor: '#db2777'
+        });
+    } else {
+        alert("Access Denied: You are not an Admin.");
+    }
+    await signOut(auth);
+    window.location.href = "index.html";
+}
+
+// --- Sidebar & Helper Functions ---
+
 export function renderSidebar(activePage) {
     const sidebarHTML = `
     <aside class="w-64 fixed top-0 left-0 h-full bg-white shadow-xl z-30 hidden md:flex flex-col border-r border-gray-200 font-sans">
         <div class="p-6 border-b flex items-center gap-3">
-            <img src="https://i.ibb.co/1tCywvyP/logo.png" class="h-10" alt="Logo">
+            <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold text-xl">
+                T
+            </div>
             <div>
-                
+                <h2 class="font-bold text-gray-800 text-lg">TUTU Admin</h2>
+                <p class="text-[10px] text-gray-400 uppercase tracking-wider">Control Panel</p>
             </div>
         </div>
         
         <nav class="flex-grow p-4 space-y-1 overflow-y-auto custom-scrollbar">
-            
             <p class="px-4 mt-2 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Main</p>
             
-            <a href="dashboard.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-green-50 hover:text-mudalali-green rounded-lg transition-all duration-200 group ${activePage === 'dashboard' ? 'bg-green-50 text-mudalali-green font-bold' : ''}">
+            <a href="dashboard.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'dashboard' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
                 <i class="fa fa-tachometer-alt w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Dashboard</span>
             </a>
             
-            <a href="orders.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-green-50 hover:text-mudalali-green rounded-lg transition-all duration-200 group ${activePage === 'orders' ? 'bg-green-50 text-mudalali-green font-bold' : ''}">
+            <a href="orders.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'orders' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
                 <i class="fa fa-shopping-cart w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Orders</span>
             </a>
 
-            <a href="products.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-green-50 hover:text-mudalali-green rounded-lg transition-all duration-200 group ${activePage === 'products' ? 'bg-green-50 text-mudalali-green font-bold' : ''}">
+            <a href="products.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'products' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
                 <i class="fa fa-box w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Products</span>
             </a>
 
-            <p class="px-4 mt-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Users</p>
+            <a href="financials.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'financials' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
+                <i class="fa fa-file-invoice-dollar w-6 text-lg transition-transform group-hover:scale-110"></i>
+                <span class="ml-2">Financials</span>
+            </a>
+
+            <p class="px-4 mt-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">Management</p>
             
-            <a href="sellers.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-green-50 hover:text-mudalali-green rounded-lg transition-all duration-200 group ${activePage === 'sellers' ? 'bg-green-50 text-mudalali-green font-bold' : ''}">
+            <a href="sellers.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'sellers' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
                 <i class="fa fa-store w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Sellers</span>
             </a>
-            
-            <a href="affiliates.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-green-50 hover:text-mudalali-green rounded-lg transition-all duration-200 group ${activePage === 'affiliates' ? 'bg-green-50 text-mudalali-green font-bold' : ''}">
-                <i class="fa fa-bullhorn w-6 text-lg transition-transform group-hover:scale-110"></i>
-                <span class="ml-2">Affiliates</span>
+
+            <a href="loyalty.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'loyalty' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
+                <i class="fa fa-coins w-6 text-lg transition-transform group-hover:scale-110"></i>
+                <span class="ml-2">Loyalty</span>
             </a>
 
-            <p class="px-4 mt-6 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider">System</p>
-
-          
-<a href="loyalty.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-green-50 hover:text-mudalali-green rounded-lg transition-all duration-200 group ${activePage === 'loyalty' ? 'bg-green-50 text-mudalali-green font-bold' : ''}">
-    <i class="fa fa-coins w-6 text-lg transition-transform group-hover:scale-110"></i>
-    <span class="ml-2">Loyalty Coins</span>
-</a>
-
-            <a href="marketing.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-green-50 hover:text-mudalali-green rounded-lg transition-all duration-200 group ${activePage === 'marketing' ? 'bg-green-50 text-mudalali-green font-bold' : ''}">
-                <i class="fa fa-ad w-6 text-lg transition-transform group-hover:scale-110"></i>
+            <a href="marketing.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'marketing' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
+                <i class="fa fa-bullhorn w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Marketing</span>
             </a>
-            
-             <a href="settings.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-green-50 hover:text-mudalali-green rounded-lg transition-all duration-200 group ${activePage === 'settings' ? 'bg-green-50 text-mudalali-green font-bold' : ''}">
-                <i class="fa fa-cog w-6 text-lg transition-transform group-hover:scale-110"></i>
-                <span class="ml-2">Settings</span>
-            </a>
         </nav>
-
-        
 
         <div class="p-4 border-t bg-gray-50">
             <button id="admin-logout-btn" class="w-full flex items-center justify-center gap-2 text-red-600 bg-white border border-red-200 p-2.5 rounded-lg hover:bg-red-50 hover:border-red-300 transition-all shadow-sm font-semibold text-sm">
@@ -126,13 +144,12 @@ export function renderSidebar(activePage) {
     
     <div class="md:hidden fixed top-0 w-full bg-white shadow-md p-4 flex justify-between items-center z-40">
         <div class="flex items-center gap-2">
-            <img src="https://i.ibb.co/1tCywvyP/logo.png" class="h-8" alt="Logo">
-            <span class="font-bold text-gray-800 text-lg">Admin</span>
+            <div class="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold">T</div>
+            <span class="font-bold text-gray-800 text-lg">TUTU Admin</span>
         </div>
         <button id="mobile-menu-toggle" class="text-gray-600 text-2xl focus:outline-none p-2 rounded hover:bg-gray-100">
             <i class="fa fa-bars"></i>
         </button>
-
     </div>
     `;
 
@@ -174,37 +191,17 @@ export function showToast(title, icon = 'success') {
     });
 }
 
-export async function confirmAction(title = "Are you sure?", text = "You won't be able to revert this!") {
-    if(typeof Swal === 'undefined') return confirm(title);
-    const result = await Swal.fire({
-        title: title,
-        text: text,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3a6a4a',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, do it!'
-    });
-    return result.isConfirmed;
-}
-
 export async function uploadImage(file) {
     if (!file) throw new Error("No file selected");
-    
     const formData = new FormData();
     formData.append('image', file);
-
     try {
         const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-            method: 'POST',
-            body: formData
+            method: 'POST', body: formData
         });
         const data = await res.json();
-        if (data.success) {
-            return data.data.url;
-        } else {
-            throw new Error("Upload failed via ImgBB");
-        }
+        if (data.success) return data.data.url;
+        else throw new Error("Upload failed via ImgBB");
     } catch (error) {
         console.error("Image Upload Error:", error);
         throw error;

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Key Manager - TUTU Admin</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] },
+                    colors: { 'tutu-pink': '#db2777' }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans flex items-center justify-center h-screen">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-lg border-t-4 border-tutu-pink">
+        <div class="text-center mb-6">
+            <div class="bg-pink-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa fa-key text-2xl text-tutu-pink"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">API Key Configuration</h1>
+            <p class="text-sm text-gray-500">Securely save your AI & Storage keys to Firebase.</p>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Google Gemini API Key</label>
+                <div class="relative">
+                    <i class="fa fa-robot absolute left-3 top-3.5 text-gray-400"></i>
+                    <input type="password" id="gemini-key" class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none transition-all" placeholder="Paste Gemini Key here...">
+                    <i class="fa fa-eye absolute right-3 top-3.5 text-gray-400 cursor-pointer hover:text-tutu-pink transition-colors" onclick="toggleVisibility('gemini-key')"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-2">ImgBB API Key</label>
+                <div class="relative">
+                    <i class="fa fa-image absolute left-3 top-3.5 text-gray-400"></i>
+                    <input type="password" id="imgbb-key" class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none transition-all" placeholder="Paste ImgBB Key here...">
+                    <i class="fa fa-eye absolute right-3 top-3.5 text-gray-400 cursor-pointer hover:text-tutu-pink transition-colors" onclick="toggleVisibility('imgbb-key')"></i>
+                </div>
+            </div>
+
+            <button onclick="saveKeys()" class="w-full bg-tutu-pink text-white font-bold py-3 rounded-xl shadow-lg hover:bg-pink-700 hover:shadow-xl transition-all transform hover:-translate-y-0.5 mt-4">
+                <i class="fa fa-save mr-2"></i> Save Keys to Database
+            </button>
+            
+            <p class="text-xs text-center text-gray-400 mt-4">
+                <i class="fa fa-lock"></i> Saved to <b>config/ai_keys</b> collection.
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, checkAdminAuth } from "./common.js"; // Ensure common.js is in the same folder
+        import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // 1. Check Auth (Optional - Admin only)
+        checkAdminAuth();
+
+        const docRef = doc(db, 'config', 'ai_keys');
+
+        // 2. Load existing keys (if any)
+        async function loadExistingKeys() {
+            try {
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    if(data.geminiKey) document.getElementById('gemini-key').value = data.geminiKey;
+                    if(data.imgbbKey) document.getElementById('imgbb-key').value = data.imgbbKey;
+                }
+            } catch (e) {
+                console.error("Error loading keys:", e);
+            }
+        }
+        loadExistingKeys();
+
+        // 3. Save Keys Function
+        window.saveKeys = async () => {
+            const geminiKey = document.getElementById('gemini-key').value.trim();
+            const imgbbKey = document.getElementById('imgbb-key').value.trim();
+
+            if (!geminiKey || !imgbbKey) {
+                Swal.fire({ icon: 'warning', title: 'Missing Keys', text: 'Please fill in both API keys!', confirmButtonColor: '#db2777' });
+                return;
+            }
+
+            try {
+                // merge: true keeps other fields if they exist
+                await setDoc(docRef, { 
+                    geminiKey: geminiKey, 
+                    imgbbKey: imgbbKey 
+                }, { merge: true });
+
+                Swal.fire({ 
+                    icon: 'success', 
+                    title: 'Keys Saved!', 
+                    text: 'API keys have been securely updated.', 
+                    confirmButtonColor: '#db2777' 
+                });
+
+            } catch (e) {
+                console.error(e);
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#db2777' });
+            }
+        };
+
+        // UI Toggle
+        window.toggleVisibility = (id) => {
+            const input = document.getElementById(id);
+            input.type = input.type === "password" ? "text" : "password";
+        }
+    </script>
+</body>
+</html>
