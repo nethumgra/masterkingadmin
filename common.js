@@ -133,6 +133,10 @@ export function renderSidebar(activePage) {
                 <i class="fa fa-bullhorn w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Marketing</span>
             </a>
+             <a href="affiliates.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'marketing' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
+                <i class="fa fa-bullhorn w-6 text-lg transition-transform group-hover:scale-110"></i>
+                <span class="ml-2">Affliates</span>
+            </a>
         </nav>
 
         <div class="p-4 border-t bg-gray-50">
