@@ -23,6 +23,10 @@
         .tab-btn.inactive { @apply text-gray-500 hover:bg-gray-100; }
         
         .file-upload-label { @apply flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition; }
+        
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+      
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
@@ -37,7 +41,7 @@
                 <p class="text-sm text-gray-500">Manage Banners, Promos & Vouchers</p>
             </div>
             <div class="flex gap-2">
-                 <button onclick="document.getElementById('category-modal').classList.remove('hidden')" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-black transition">
+                 <button onclick="openCategoryModal()" class="bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-black transition">
                     <i class="fa fa-plus-circle mr-2"></i> Add Category
                 </button>
             </div>
@@ -45,10 +49,8 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- LEFT COLUMN: Banners & Promos -->
             <div class="lg:col-span-2 space-y-8">
                 
-                <!-- 1. Hero Banners -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                         <i class="fa fa-layer-group text-mudalali-green"></i> Main Sliders (Hero)
@@ -58,7 +60,6 @@
                     </div>
                 </div>
 
-                <!-- 2. Small Banners -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                         <i class="fa fa-images text-blue-500"></i> Small Banners
@@ -68,7 +69,6 @@
                     </div>
                 </div>
 
-                <!-- 3. Shop By Category Banners -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                         <i class="fa fa-th-large text-purple-600"></i> Shop By Category Banners
@@ -78,7 +78,6 @@
                     </div>
                 </div>
 
-                <!-- 4. Product Promo Areas -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                         <i class="fa fa-bullhorn text-orange-500"></i> Product Promo Areas
@@ -90,10 +89,8 @@
 
             </div>
 
-            <!-- RIGHT COLUMN: Tools, Categories & Coupons -->
             <div class="space-y-8">
                 
-                <!-- Category Management List -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="font-bold text-lg text-gray-800"><i class="fa fa-list text-gray-600 mr-2"></i> Categories</h3>
@@ -103,7 +100,6 @@
                     </div>
                 </div>
 
-                <!-- Push Notification -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative overflow-hidden">
                     <h3 class="font-bold text-lg text-gray-800 mb-4"><i class="fa fa-bell text-blue-600 mr-2"></i> Push Notification</h3>
                     <div class="space-y-4">
@@ -115,25 +111,30 @@
                     </div>
                 </div>
 
-                <!-- Coupon Manager (Updated) -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
                         <i class="fa fa-ticket-alt text-offer-red"></i> Coupon Manager
                     </h3>
                     
-                    <!-- Create Form -->
                     <div class="bg-red-50 p-4 rounded-lg border border-red-100 mb-4">
                         <p class="text-xs font-bold text-red-600 uppercase mb-2">Create New Voucher</p>
                         <div class="flex gap-2 mb-2">
                             <input type="text" id="promo-code" class="w-2/3 border p-2 rounded uppercase font-bold text-center text-sm" placeholder="CODE123">
                             <input type="number" id="promo-percent" class="w-1/3 border p-2 rounded text-center text-sm" placeholder="10%">
                         </div>
+                        
+                        <div class="mb-2">
+                             <button onclick="openProductSelector()" id="btn-select-products" class="w-full bg-white border border-red-200 text-red-600 font-semibold py-1.5 rounded hover:bg-red-50 text-xs transition">
+                                <i class="fa fa-box-open mr-1"></i> Select Products (Optional)
+                            </button>
+                            <p id="product-selection-status" class="text-[10px] text-gray-500 text-center mt-1 hidden">All products selected</p>
+                        </div>
+
                         <button onclick="createPromo()" class="w-full bg-red-600 text-white font-bold py-2 rounded-lg hover:bg-red-700 text-sm shadow-sm">
                             <i class="fa fa-plus-circle"></i> Add Coupon
                         </button>
                     </div>
 
-                    <!-- Active Coupons List -->
                     <div>
                         <p class="text-xs font-bold text-gray-500 uppercase mb-2">Active Coupons</p>
                         <div id="coupons-list" class="space-y-2 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
@@ -147,7 +148,6 @@
 
     </main>
 
-    <!-- 1. Edit Banner Modal (Unified with Upload) -->
     <div id="edit-banner-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden transform transition-all scale-100">
             <div class="bg-gray-800 p-4 flex justify-between items-center text-white">
@@ -159,18 +159,14 @@
                 <input type="hidden" id="edit-slot-id">
                 <input type="hidden" id="edit-collection"> 
                 
-                <!-- Device Switcher Tabs -->
                 <div class="flex gap-2 bg-gray-100 p-1 rounded-lg mb-2">
                     <button onclick="switchTab('pc')" id="tab-pc" class="tab-btn active w-1/2"><i class="fa fa-desktop"></i> Desktop</button>
                     <button onclick="switchTab('mob')" id="tab-mob" class="tab-btn inactive w-1/2"><i class="fa fa-mobile-alt"></i> Mobile</button>
                 </div>
 
-                <!-- Desktop Fields -->
                 <div id="view-pc" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Desktop Image</label>
-                        
-                        <!-- Upload Box -->
                         <label class="file-upload-label mb-2">
                             <div class="flex flex-col items-center justify-center pt-5 pb-6">
                                 <i class="fa fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
@@ -178,7 +174,6 @@
                             </div>
                             <input type="file" id="file-pc" class="hidden" accept="image/*" onchange="handleFileSelect('pc')">
                         </label>
-
                         <div class="flex gap-2">
                             <input type="text" id="edit-img-pc" class="w-full border p-2 rounded text-sm bg-gray-50" placeholder="Image URL" oninput="previewImage('pc')">
                             <button onclick="generateAIImage('pc')" class="bg-purple-100 text-purple-600 px-2 rounded text-xs font-bold hover:bg-purple-200 whitespace-nowrap">AI Gen</button>
@@ -187,12 +182,9 @@
                     </div>
                 </div>
 
-                <!-- Mobile Fields -->
                 <div id="view-mob" class="space-y-4 hidden">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mobile Image (Optional)</label>
-                        
-                        <!-- Upload Box -->
                         <label class="file-upload-label mb-2">
                             <div class="flex flex-col items-center justify-center pt-5 pb-6">
                                 <i class="fa fa-cloud-upload-alt text-2xl text-gray-400 mb-2"></i>
@@ -200,7 +192,6 @@
                             </div>
                             <input type="file" id="file-mob" class="hidden" accept="image/*" onchange="handleFileSelect('mob')">
                         </label>
-
                         <div class="flex gap-2">
                             <input type="text" id="edit-img-mob" class="w-full border p-2 rounded text-sm bg-gray-50" placeholder="Use Desktop image if empty" oninput="previewImage('mob')">
                             <button onclick="generateAIImage('mob')" class="bg-purple-100 text-purple-600 px-2 rounded text-xs font-bold hover:bg-purple-200 whitespace-nowrap">AI Gen</button>
@@ -209,13 +200,11 @@
                     </div>
                 </div>
 
-                <!-- Common Link -->
                 <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Click Link</label>
                     <input type="text" id="edit-link" class="w-full border p-2 rounded text-sm" placeholder="/shop?cat=electronics">
                 </div>
                 
-                <!-- AI Prompt Hidden -->
                 <div id="ai-prompt-box" class="hidden mt-2 p-2 bg-purple-50 rounded border border-purple-200">
                     <input type="text" id="ai-prompt" class="w-full border p-1 rounded text-xs mb-1" placeholder="Describe image...">
                     <button onclick="confirmAIGen()" class="bg-purple-600 text-white text-xs px-2 py-1 rounded w-full">Generate</button>
@@ -229,7 +218,6 @@
         </div>
     </div>
 
-    <!-- 2. Edit Promo Area Modal -->
     <div id="edit-promo-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
             <div class="bg-orange-600 p-4 flex justify-between items-center text-white">
@@ -272,15 +260,14 @@
         </div>
     </div>
 
-    <!-- 3. Add Category Modal -->
     <div id="category-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
             <div class="bg-gray-800 p-4 flex justify-between items-center text-white">
-                <h3 class="font-bold text-lg">Add Category</h3>
+                <h3 class="font-bold text-lg" id="cat-modal-title">Add Category</h3>
                 <button onclick="closeModal('category-modal')" class="text-white text-2xl">&times;</button>
             </div>
             <div class="p-6 space-y-4">
-                <div>
+                <input type="hidden" id="cat-id"> <div>
                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Category Name</label>
                     <input type="text" id="cat-name" class="w-full border p-2 rounded text-sm font-bold">
                 </div>
@@ -292,6 +279,7 @@
                     </label>
                     <div class="flex gap-2">
                          <input type="text" id="cat-img" class="w-full border p-2 rounded text-sm" placeholder="URL">
+                         <button onclick="generateAICatImage()" class="bg-purple-100 text-purple-600 px-2 rounded text-xs font-bold">AI</button>
                     </div>
                     <img id="preview-cat" class="w-10 h-10 object-contain mt-2 hidden border">
                 </div>
@@ -302,6 +290,28 @@
             </div>
             <div class="p-4 bg-gray-50 border-t flex justify-end">
                 <button onclick="saveCategory()" id="btn-save-cat" class="px-6 py-2 bg-gray-800 text-white rounded-lg font-bold hover:bg-black shadow-md text-sm">Create Category</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="product-select-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-red-600 p-4 flex justify-between items-center text-white flex-shrink-0">
+                <h3 class="font-bold text-lg">Select Products for Coupon</h3>
+                <button onclick="closeModal('product-select-modal')" class="text-white text-2xl">&times;</button>
+            </div>
+            
+            <div class="p-4 border-b bg-gray-50 flex-shrink-0">
+                 <input type="text" id="product-search" oninput="filterProducts()" class="w-full border p-2 rounded pl-8 focus:ring-2 focus:ring-red-500 outline-none text-sm" placeholder="Search products...">
+            </div>
+
+            <div id="product-selection-list" class="p-4 space-y-2 overflow-y-auto flex-grow custom-scrollbar">
+                <p class="text-center text-gray-400 py-10">Loading Products...</p>
+            </div>
+
+            <div class="p-4 bg-gray-50 border-t flex justify-between items-center flex-shrink-0">
+                <span id="selection-count" class="text-xs font-bold text-gray-500">0 Selected</span>
+                <button onclick="confirmProductSelection()" class="px-6 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 text-sm">Confirm Selection</button>
             </div>
         </div>
     </div>
@@ -320,7 +330,9 @@
         const promoAreaPath = `${publicDataPath}/productPromoAreas`;
         const categoryPath = `${publicDataPath}/categories`;
         const carouselPath = `${publicDataPath}/productCarousels`;
-        const couponsPath = `${publicDataPath}/coupons`; // New path
+        const couponsPath = `${publicDataPath}/coupons`; 
+       // මේ පේළිය සොයාගෙන replace කරන්න
+        const productsPath = `${publicDataPath}/products`;
         
         const imgbbApiKey = 'f068295c19803c448665a0ea48bcc2fc'; 
 
@@ -349,14 +361,18 @@
         ];
 
         let availableCarousels = [];
-        let currentActiveGenType = null; // for AI gen logic
+        let allProducts = []; // Store fetched products
+        let selectedCouponProducts = []; // Store selected IDs for current coupon
+        let currentActiveGenType = null; 
 
         // --- INITIALIZATION ---
         async function init() {
             await loadCarousels(); 
             loadAllBannersOptimized();
             loadCategories();
-            loadCoupons(); // Load Coupons
+            loadCoupons();
+            // We fetch products only when the modal is opened to save bandwidth, 
+            // or eagerly here if list is small. Let's do lazy load in openProductSelector.
         }
 
         // --- OPTIMIZED LOADING LOGIC (Batch Reads) ---
@@ -365,14 +381,14 @@
             const heroContainer = document.getElementById('hero-banners-list');
             heroContainer.innerHTML = '';
             const heroIds = HERO_SLOTS.map(s => s.id);
-            const homeDataMap = await fetchBatchDocs(siteContentPath, [...heroIds, ...SMALL_SLOTS.map(s=>s.id)]); // Fetch Hero & Small together
+            const homeDataMap = await fetchBatchDocs(siteContentPath, [...heroIds, ...SMALL_SLOTS.map(s=>s.id)]); 
             
             HERO_SLOTS.forEach(slot => {
                 const data = homeDataMap[slot.id] || {};
                 renderBannerCard(heroContainer, slot, data, 'siteContent');
             });
 
-            // 2. Load Small Banners (New Separate List)
+            // 2. Load Small Banners
             const smallContainer = document.getElementById('small-banners-list');
             smallContainer.innerHTML = '';
             SMALL_SLOTS.forEach(slot => {
@@ -403,16 +419,13 @@
             });
         }
 
-        // --- BATCH FETCH HELPER ---
         async function fetchBatchDocs(collPath, ids) {
             try {
                 const results = {};
-                // Chunking to handle potential > 10 IDs (though not expected here)
                 const chunks = [];
                 for (let i = 0; i < ids.length; i += 10) {
                     chunks.push(ids.slice(i, i + 10));
                 }
-                
                 for(const chunk of chunks) {
                     const q = query(collection(db, collPath), where(documentId(), 'in', chunk));
                     const snap = await getDocs(q);
@@ -425,7 +438,6 @@
             }
         }
 
-        // --- RENDER FUNCTIONS ---
         function renderBannerCard(container, slot, data, collectionName) {
             const hasImage = data.imageUrl || data.imageUrl_pc || data.imageUrl_mob;
             const displayImg = data.imageUrl_pc || data.imageUrl || 'https://placehold.co/600x200?text=Empty';
@@ -473,7 +485,7 @@
             container.insertAdjacentHTML('beforeend', html);
         }
 
-        // --- 4. CATEGORIES ---
+        // --- 4. CATEGORIES (Enhanced with Edit) ---
         function loadCategories() {
             const container = document.getElementById('categories-list');
             onSnapshot(collection(db, categoryPath), (snap) => {
@@ -481,6 +493,7 @@
                 container.innerHTML = '';
                 snap.forEach(doc => {
                     const d = doc.data();
+                    // Store data in data-attributes for easy editing
                     container.innerHTML += `
                         <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded border-b border-gray-100 last:border-0">
                             <div class="flex items-center gap-3">
@@ -489,14 +502,17 @@
                                 </div>
                                 <span class="text-sm font-semibold text-gray-700">${d.name}</span>
                             </div>
-                            <button onclick="deleteCategory('${doc.id}')" class="text-red-400 hover:text-red-600"><i class="fa fa-trash"></i></button>
+                            <div class="flex gap-2">
+                                <button onclick="window.editCategory('${doc.id}', '${d.name}', '${d.imageUrl || ''}', '${d.color || '#f5f5f4'}')" class="text-blue-400 hover:text-blue-600"><i class="fa fa-edit"></i></button>
+                                <button onclick="deleteCategory('${doc.id}')" class="text-red-400 hover:text-red-600"><i class="fa fa-trash"></i></button>
+                            </div>
                         </div>
                     `;
                 });
             });
         }
 
-        // --- 5. COUPONS ---
+        // --- 5. COUPONS (Enhanced with Product Selection Display) ---
         function loadCoupons() {
             const container = document.getElementById('coupons-list');
             onSnapshot(collection(db, couponsPath), (snap) => {
@@ -504,10 +520,17 @@
                 container.innerHTML = '';
                 snap.forEach(doc => {
                     const d = doc.data();
+                    const productCount = d.applicableProducts ? d.applicableProducts.length : 0;
+                    const scopeText = productCount > 0 ? `${productCount} Products Only` : 'All Products';
+                    const scopeClass = productCount > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500';
+
                     container.innerHTML += `
                         <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100 hover:shadow-sm transition">
                             <div>
-                                <p class="font-bold text-sm text-gray-800 tracking-wide">${d.code}</p>
+                                <div class="flex items-center gap-2">
+                                    <p class="font-bold text-sm text-gray-800 tracking-wide">${d.code}</p>
+                                    <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${scopeClass}">${scopeText}</span>
+                                </div>
                                 <p class="text-[10px] font-bold text-offer-red">${d.discount}% Discount</p>
                             </div>
                             <button onclick="deleteCoupon('${doc.id}')" class="text-gray-400 hover:text-red-600 transition p-1"><i class="fa fa-trash"></i></button>
@@ -538,7 +561,6 @@
             const file = fileInput.files[0];
             if (!file) return;
 
-            // Show loading state
             const targetInputId = type === 'cat' ? 'cat-img' : (type === 'promo' ? 'promo-img' : `edit-img-${type}`);
             const targetInput = document.getElementById(targetInputId);
             const originalVal = targetInput.value;
@@ -554,7 +576,6 @@
                 if (data.success) {
                     targetInput.value = data.data.url;
                     
-                    // Trigger preview update
                     if (type === 'cat') {
                         const img = document.getElementById('preview-cat');
                         img.src = data.data.url; img.classList.remove('hidden');
@@ -575,7 +596,7 @@
             }
         };
 
-        // --- MODAL LOGIC (BANNERS) ---
+        // --- BANNER MODAL LOGIC ---
         window.openEditModal = async (slotId, slotName, collectionName) => {
             const modal = document.getElementById('edit-banner-modal');
             modal.classList.remove('hidden');
@@ -583,7 +604,6 @@
             document.getElementById('edit-slot-id').value = slotId;
             document.getElementById('edit-collection').value = collectionName;
             
-            // Clear inputs
             document.getElementById('file-pc').value = '';
             document.getElementById('file-mob').value = '';
             
@@ -631,9 +651,7 @@
 
             if (pcUrl === "Uploading..." || mobUrl === "Uploading...") {
                 alert("Please wait for images to finish uploading.");
-                btn.disabled = false;
-                btn.textContent = "Save Changes";
-                return;
+                btn.disabled = false; btn.textContent = "Save Changes"; return;
             }
 
             const path = collName === 'siteContent' ? siteContentPath : shopBannerPath;
@@ -645,7 +663,6 @@
                 updatedAt: serverTimestamp()
             };
 
-            // Maintain 'size' for shop banners if needed
             if (collName === 'shopByCategoryBanners') {
                 if (slotId.includes('Large')) data.size = 'large';
                 else data.size = 'small';
@@ -655,22 +672,20 @@
                 await setDoc(doc(db, path, slotId), data, { merge: true });
                 alert("Saved!");
                 window.closeModal('edit-banner-modal');
-                loadAllBannersOptimized(); // Refresh
+                loadAllBannersOptimized(); 
             } catch (e) {
                 alert("Error saving: " + e.message);
             } finally {
-                btn.disabled = false;
-                btn.textContent = "Save Changes";
+                btn.disabled = false; btn.textContent = "Save Changes";
             }
         };
 
-        // --- MODAL LOGIC (PROMOS) ---
+        // --- PROMO MODAL LOGIC ---
         window.openPromoModal = async (id, name) => {
             document.getElementById('edit-promo-modal').classList.remove('hidden');
             document.getElementById('promo-id').value = id;
             document.getElementById('file-promo').value = '';
             
-            // Populate Carousel Select
             const select = document.getElementById('promo-carousel');
             select.innerHTML = '<option value="">None</option>' + availableCarousels.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
 
@@ -709,15 +724,43 @@
             alert("Promo Updated!");
             window.closeModal('edit-promo-modal');
             loadAllBannersOptimized();
-            btn.disabled = false;
-            btn.textContent = "Save Promo";
+            btn.disabled = false; btn.textContent = "Save Promo";
         };
 
-        // --- CATEGORY LOGIC ---
+        // --- CATEGORY LOGIC (UPDATED WITH EDIT) ---
+        
+        window.openCategoryModal = () => {
+             // Reset for Add Mode
+             document.getElementById('cat-id').value = '';
+             document.getElementById('cat-modal-title').textContent = 'Add Category';
+             document.getElementById('cat-name').value = '';
+             document.getElementById('cat-img').value = '';
+             document.getElementById('preview-cat').classList.add('hidden');
+             document.getElementById('btn-save-cat').textContent = 'Create Category';
+             document.getElementById('category-modal').classList.remove('hidden');
+        }
+
+        window.editCategory = (id, name, img, color) => {
+            // Setup for Edit Mode
+            document.getElementById('cat-id').value = id;
+            document.getElementById('cat-modal-title').textContent = 'Edit Category';
+            document.getElementById('cat-name').value = name;
+            document.getElementById('cat-img').value = img;
+            document.getElementById('cat-color').value = color;
+            
+            const prevImg = document.getElementById('preview-cat');
+            if(img) { prevImg.src = img; prevImg.classList.remove('hidden'); }
+            else { prevImg.classList.add('hidden'); }
+
+            document.getElementById('btn-save-cat').textContent = 'Update Category';
+            document.getElementById('category-modal').classList.remove('hidden');
+        }
+
         window.saveCategory = async () => {
             const btn = document.getElementById('btn-save-cat');
             btn.disabled = true; btn.textContent = "Saving...";
 
+            const id = document.getElementById('cat-id').value;
             const name = document.getElementById('cat-name').value;
             const img = document.getElementById('cat-img').value;
             const color = document.getElementById('cat-color').value;
@@ -725,18 +768,158 @@
             if(!name) { alert("Name Required"); btn.disabled = false; return; }
             if(img === "Uploading...") { alert("Wait for upload"); btn.disabled = false; return; }
 
-            await addDoc(collection(db, categoryPath), {
-                name, imageUrl: img, color, createdAt: serverTimestamp()
-            });
-            alert("Category Added!");
+            const payload = { name, imageUrl: img, color };
+
+            if (id) {
+                // Update Existing
+                await updateDoc(doc(db, categoryPath, id), { ...payload, updatedAt: serverTimestamp() });
+                alert("Category Updated!");
+            } else {
+                // Create New
+                await addDoc(collection(db, categoryPath), { ...payload, createdAt: serverTimestamp() });
+                alert("Category Added!");
+            }
+            
             window.closeModal('category-modal');
-            document.getElementById('cat-name').value = '';
-            document.getElementById('cat-img').value = '';
-            btn.disabled = false; btn.textContent = "Create Category";
+            btn.disabled = false;
         };
 
         window.deleteCategory = async (id) => {
             if(confirm("Delete this category?")) await deleteDoc(doc(db, categoryPath, id));
+        };
+
+        // --- COUPON PRODUCT SELECTION LOGIC ---
+
+        window.openProductSelector = async () => {
+            const modal = document.getElementById('product-select-modal');
+            modal.classList.remove('hidden');
+            
+            // If products not loaded yet, fetch them
+            if (allProducts.length === 0) {
+                const list = document.getElementById('product-selection-list');
+                try {
+                    const snap = await getDocs(collection(db, productsPath));
+                    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+               } catch(e) {
+    console.error("Full Error:", e); // <--- Console එකට Error එක යවනවා
+    list.innerHTML = `<p class="text-red-500 text-center">Error: ${e.message}</p>`; // <--- Screen එකේ Error එක පෙන්නනවා
+    return;
+}
+            }
+            
+            selectedCouponProducts = []; // Reset selection when opening for new coupon
+            window.renderProductList(allProducts);
+            window.updateSelectionCount();
+        };
+
+     window.renderProductList = (products) => {
+            const list = document.getElementById('product-selection-list');
+            list.innerHTML = '';
+            
+            if(products.length === 0) {
+                 list.innerHTML = `<p class="text-center text-gray-400">No products found.</p>`;
+                 return;
+            }
+
+            // Debugging: පළමු Product එකේ ඩේටා ටික Console එකට දාමු හරියටම නම බලාගන්න
+            console.log("First Product Data:", products[0]); 
+
+            products.forEach(p => {
+                const isSelected = selectedCouponProducts.includes(p.id);
+                
+                // Image එක හොයාගන්න විවිධ නම් වලින් ට්‍රයි කරනවා
+                let imgUrl = 'https://placehold.co/100?text=No+Img'; // Default Placeholder
+                
+                if (p.images && p.images.length > 0) {
+                    imgUrl = p.images[0];
+                } else if (p.imageUrl) {
+                    imgUrl = p.imageUrl;
+                } else if (p.thumbnail) {
+                    imgUrl = p.thumbnail;
+                }
+
+                const html = `
+                    <div class="flex items-center gap-3 p-2 border rounded hover:bg-gray-50 cursor-pointer" onclick="toggleProduct('${p.id}')">
+                        <input type="checkbox" id="chk-${p.id}" ${isSelected ? 'checked' : ''} class="w-4 h-4 text-red-600 rounded focus:ring-red-500 pointer-events-none">
+                        <div class="w-10 h-10 bg-gray-200 rounded overflow-hidden flex-shrink-0 border border-gray-300">
+                             <img src="${imgUrl}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/100?text=Error'">
+                        </div>
+                        <div class="flex-grow">
+                            <p class="text-xs font-bold text-gray-800 line-clamp-1">${p.name}</p>
+                            <p class="text-[10px] text-gray-500">${p.category || 'No Cat'} | LKR ${p.price}</p>
+                        </div>
+                    </div>
+                `;
+                list.insertAdjacentHTML('beforeend', html);
+            });
+        };
+
+        window.toggleProduct = (id) => {
+            const chk = document.getElementById(`chk-${id}`);
+            if (selectedCouponProducts.includes(id)) {
+                selectedCouponProducts = selectedCouponProducts.filter(pid => pid !== id);
+                chk.checked = false;
+            } else {
+                selectedCouponProducts.push(id);
+                chk.checked = true;
+            }
+            window.updateSelectionCount();
+        };
+
+        window.updateSelectionCount = () => {
+            document.getElementById('selection-count').textContent = `${selectedCouponProducts.length} Selected`;
+        };
+
+        window.filterProducts = () => {
+            const query = document.getElementById('product-search').value.toLowerCase();
+            const filtered = allProducts.filter(p => p.name.toLowerCase().includes(query));
+            window.renderProductList(filtered);
+        };
+
+        window.confirmProductSelection = () => {
+            const btn = document.getElementById('btn-select-products');
+            const status = document.getElementById('product-selection-status');
+            
+            if (selectedCouponProducts.length > 0) {
+                btn.innerHTML = `<i class="fa fa-check-circle mr-1"></i> ${selectedCouponProducts.length} Products Selected`;
+                btn.classList.add('bg-red-50', 'border-red-400');
+                status.textContent = "Coupon applies only to these products.";
+                status.classList.remove('hidden');
+            } else {
+                btn.innerHTML = `<i class="fa fa-box-open mr-1"></i> Select Products (Optional)`;
+                btn.classList.remove('bg-red-50', 'border-red-400');
+                status.textContent = "All products selected (Default)";
+                status.classList.remove('hidden');
+            }
+            window.closeModal('product-select-modal');
+        };
+
+        window.createPromo = async () => {
+            const code = document.getElementById('promo-code').value;
+            const percent = document.getElementById('promo-percent').value;
+            
+            if(!code || !percent) return alert("Code and Discount % required");
+
+            await addDoc(collection(db, couponsPath), { 
+                code: code.toUpperCase(), 
+                discount: parseInt(percent), 
+                active: true, 
+                applicableProducts: selectedCouponProducts, // Add the selected products array
+                createdAt: serverTimestamp() 
+            });
+
+            alert("Coupon Created!");
+            document.getElementById('promo-code').value = '';
+            document.getElementById('promo-percent').value = '';
+            
+            // Reset Selection UI
+            selectedCouponProducts = [];
+            document.getElementById('btn-select-products').innerHTML = `<i class="fa fa-box-open mr-1"></i> Select Products (Optional)`;
+            document.getElementById('product-selection-status').classList.add('hidden');
+        };
+
+        window.deleteCoupon = async (id) => {
+            if(confirm("Delete this coupon?")) await deleteDoc(doc(db, couponsPath, id));
         };
 
         // --- AI GENERATOR ---
@@ -761,7 +944,7 @@
         window.generateAICatImage = () => {
              const name = document.getElementById('cat-name').value;
              if(!name) return alert("Enter name first");
-             const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(name + ' icon minimal 3d render')}?width=200&height=200&nologo=true`;
+             const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(name + ' icon minimal 3d render white background')}?width=200&height=200&nologo=true`;
              document.getElementById('cat-img').value = url;
              const img = document.getElementById('preview-cat');
              img.src = url; img.classList.remove('hidden');
@@ -769,27 +952,12 @@
 
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
         
-       
         window.sendNotification = async () => {
             const title = document.getElementById('notif-title').value;
             const body = document.getElementById('notif-body').value;
             if(!title) return alert("Title required");
             await addDoc(collection(db, publicDataPath, "notifications"), { title, body, status: 'pending', sentAt: serverTimestamp() });
             alert("Queued!");
-        };
-
-        window.createPromo = async () => {
-            const code = document.getElementById('promo-code').value;
-            const percent = document.getElementById('promo-percent').value;
-            if(!code || !percent) return alert("Code and Discount % required");
-            await addDoc(collection(db, couponsPath), { code: code.toUpperCase(), discount: parseInt(percent), active: true, createdAt: serverTimestamp() });
-            alert("Coupon Created!");
-            document.getElementById('promo-code').value = '';
-            document.getElementById('promo-percent').value = '';
-        };
-
-        window.deleteCoupon = async (id) => {
-            if(confirm("Delete this coupon?")) await deleteDoc(doc(db, couponsPath, id));
         };
 
         init();

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Resellers - Mudalali Mama Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'admin-gray': '#1f2937' } } }
+        }
+    </script>
+    <style>
+        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                    Reseller Management <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full border border-blue-200">Users</span>
+                </h1>
+                <p class="text-sm text-gray-500 mt-1">View and manage registered resellers.</p>
+            </div>
+            
+             <div class="flex gap-2">
+                <button onclick="loadResellers(true)" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-50 transition shadow-sm">
+                    <i class="fa fa-sync-alt mr-1"></i> Refresh List
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="relative w-full md:w-96">
+                <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
+                <input type="text" id="reseller-search" class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-mudalali-green outline-none" placeholder="Search by Name, Email or Store...">
+            </div>
+            <div class="flex gap-2">
+                <select id="status-filter" onchange="loadResellers(true)" class="p-2 border rounded-lg bg-gray-50 outline-none text-sm font-semibold text-gray-600 cursor-pointer">
+                    <option value="all">All Status</option>
+                    <option value="approved">Active ✅</option>
+                    <option value="pending">Pending ⏳</option>
+                    <option value="rejected">Rejected ⛔</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 min-h-[500px]">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-bold border-b sticky top-0 z-10">
+                        <tr>
+                            <th class="p-4">Reseller Info</th>
+                            <th class="p-4">Store Details</th>
+                            <th class="p-4">Joined Date</th>
+                            <th class="p-4 text-center">Status</th>
+                            <th class="p-4 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resellers-table-body" class="divide-y divide-gray-100">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div id="scroll-loader" class="p-6 text-center hidden">
+                <i class="fa fa-circle-notch fa-spin text-mudalali-green text-xl"></i>
+                <p class="text-xs text-gray-500 mt-2 font-bold">Loading users...</p>
+            </div>
+            <div id="empty-state" class="hidden p-10 text-center">
+                <div class="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fa fa-users-slash text-gray-400 text-2xl"></i>
+                </div>
+                <p class="text-gray-500 font-bold">No Resellers Found</p>
+                <p class="text-xs text-gray-400">Try adjusting your filters.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="reseller-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden m-4 transform transition-all">
+            <div class="bg-gray-900 p-4 flex justify-between items-center text-white">
+                <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa fa-user-tag"></i> Reseller Profile</h3>
+                <button onclick="document.getElementById('reseller-modal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-6 max-h-[80vh] overflow-y-auto" id="modal-content">
+                </div>
+        </div>
+    </div>
+
+ <script type="module">
+        import { renderSidebar, checkAdminAuth, db, showToast } from "./common.js";
+        import { collection, getDocs, query, where, limit, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Admin Auth Check
+        checkAdminAuth();
+        renderSidebar('resellers'); 
+
+        // Global Variables
+        let isFetching = false;
+        let allResellersCache = [];
+
+        // --- 1. Load Resellers (SAFE MODE - NO SORTING) ---
+        window.loadResellers = async () => {
+            if (isFetching) return;
+            isFetching = true;
+            
+            const loader = document.getElementById('scroll-loader');
+            const tbody = document.getElementById('resellers-table-body');
+            const emptyState = document.getElementById('empty-state');
+
+            // Reset UI
+            tbody.innerHTML = '';
+            emptyState.classList.add('hidden');
+            loader.classList.remove('hidden');
+            
+            console.log("🚀 Starting to load resellers...");
+
+            try {
+                // 🔹 වෙනස 1: අපි orderBy අයින් කළා. දැන් Index ඕනේ නෑ.
+                // 🔹 වෙනස 2: 'role' එක 'reseller' ද කියලා බලනවා.
+                const q = query(
+                    collection(db, 'users'), 
+                    where('role', '==', 'reseller'),
+                    limit(50) // උපරිම 50ක් ගේනවා
+                );
+
+                const snap = await getDocs(q);
+                console.log(`✅ Users Found: ${snap.size}`);
+
+                if (snap.empty) {
+                    console.warn("⚠️ No resellers found in database.");
+                    emptyState.classList.remove('hidden');
+                } else {
+                    allResellersCache = [];
+                    
+                    // Data ටික Loop කරලා Table එකට දාමු
+                    for (const userDoc of snap.docs) {
+                        const userData = { id: userDoc.id, ...userDoc.data() };
+                        
+                        // Store Details ගන්නවා
+                        const storeData = await getStoreDetails(userData.id);
+                        const fullData = { ...userData, store: storeData };
+                        
+                        allResellersCache.push(fullData);
+                    }
+                    
+                    renderTable(allResellersCache);
+                }
+
+            } catch (e) {
+                console.error("❌ ERROR LOADING DATA:", e);
+                alert("Data Load Error: " + e.message);
+            } finally {
+                isFetching = false;
+                loader.classList.add('hidden');
+            }
+        };
+
+        // --- 2. Helper: Store Details ---
+        async function getStoreDetails(uid) {
+            try {
+                // ඔයාගේ app-id එක හරියටම දාන්න (නැත්නම් default තියන්න)
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const storeSnap = await getDoc(doc(db, `artifacts/${appId}/public/data/stores`, uid));
+                if (storeSnap.exists()) return storeSnap.data();
+            } catch(e) { console.log("Store fetch error for:", uid); }
+            return null;
+        }
+
+        // --- 3. Render Table ---
+        function renderTable(resellers) {
+            const tbody = document.getElementById('resellers-table-body');
+            const search = document.getElementById('reseller-search').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+
+            tbody.innerHTML = '';
+
+            const filtered = resellers.filter(r => {
+                const matchesSearch = (r.name || '').toLowerCase().includes(search) || (r.email || '').toLowerCase().includes(search);
+                let matchesStatus = true;
+                if (statusFilter !== 'all') {
+                    const currentStatus = r.sellerStatus || 'pending';
+                    matchesStatus = currentStatus === statusFilter;
+                }
+                return matchesSearch && matchesStatus;
+            });
+
+            if (filtered.length === 0) {
+                document.getElementById('empty-state').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('empty-state').classList.add('hidden');
+            }
+
+            filtered.forEach(r => {
+                const joinDate = r.createdAt ? new Date(r.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+                const status = r.sellerStatus || 'pending';
+                
+                let statusBadge = '';
+                if(status === 'approved') statusBadge = '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Active</span>';
+                else if(status === 'rejected') statusBadge = '<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold border border-red-200">Rejected</span>';
+                else statusBadge = '<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold border border-yellow-200 animate-pulse">Pending</span>';
+
+                const storeName = r.store?.storeName || '<span class="text-gray-400 italic">No Store</span>';
+                const location = r.store?.location || '-';
+
+                const row = `
+                    <tr class="border-b hover:bg-gray-50 transition">
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                <img src="${r.photoURL || 'https://placehold.co/50'}" class="w-10 h-10 rounded-full border bg-gray-200 object-cover">
+                                <div>
+                                    <div class="font-bold text-gray-800">${r.name}</div>
+                                    <div class="text-xs text-gray-500">${r.email}</div>
+                                    <div class="text-xs text-gray-400">${r.phone || ''}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <div class="font-semibold text-gray-700">${storeName}</div>
+                            <div class="text-xs text-gray-500"><i class="fa fa-map-marker-alt text-red-400 mr-1"></i> ${location}</div>
+                        </td>
+                        <td class="p-4 text-sm text-gray-600">${joinDate}</td>
+                        <td class="p-4 text-center">${statusBadge}</td>
+                        <td class="p-4 text-center">
+                            <button onclick='window.viewReseller(${JSON.stringify(r).replace(/'/g, "&apos;")})' class="bg-white border border-gray-200 text-gray-500 hover:text-blue-600 p-2 rounded-lg shadow-sm transition">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        // --- 4. View & Update Functions ---
+        window.viewReseller = (r) => {
+            const modal = document.getElementById('reseller-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+
+            const idDoc = r.idCardUrl ? `<img src="${r.idCardUrl}" class="w-full h-auto rounded border shadow-sm mt-2">` : '<p class="text-gray-400 italic text-sm mt-2">No ID Document Uploaded</p>';
+
+            content.innerHTML = `
+                <div class="text-center mb-6">
+                    <img src="${r.photoURL || 'https://placehold.co/100'}" class="w-24 h-24 rounded-full border-4 border-gray-100 mx-auto object-cover shadow-md">
+                    <h2 class="text-xl font-bold text-gray-800 mt-3">${r.name}</h2>
+                    <p class="text-sm text-gray-500">${r.email}</p>
+                    <p class="text-sm text-gray-500">${r.phone || 'No Phone'}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">Store Information</h4>
+                    <p class="font-bold text-sm text-gray-700">${r.store?.storeName || 'N/A'}</p>
+                    <p class="text-xs text-gray-400">${r.store?.location || 'N/A'}</p>
+                </div>
+                <div class="mb-6">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-2">ID Verification</h4>
+                    ${idDoc}
+                </div>
+                <div class="flex gap-3 pt-4 border-t border-gray-100">
+                    <button onclick="updateResellerStatus('${r.id}', 'rejected')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg font-bold hover:bg-red-50 transition text-sm">Reject</button>
+                    <button onclick="updateResellerStatus('${r.id}', 'approved')" class="flex-1 bg-mudalali-green text-white py-2 rounded-lg font-bold hover:bg-green-800 transition text-sm shadow-lg">Approve</button>
+                </div>
+            `;
+        };
+
+        window.updateResellerStatus = async (uid, status) => {
+            try {
+                const userRef = doc(db, 'users', uid);
+                await updateDoc(userRef, { 
+                    sellerStatus: status,
+                    isSeller: status === 'approved' 
+                });
+                
+                showToast(`Reseller ${status}!`, 'success');
+                document.getElementById('reseller-modal').classList.add('hidden');
+                
+                // Update Cache and Refresh
+                const idx = allResellersCache.findIndex(x => x.id === uid);
+                if(idx !== -1) allResellersCache[idx].sellerStatus = status;
+                renderTable(allResellersCache);
+
+            } catch (e) {
+                console.error(e);
+                showToast("Update failed.", "error");
+            }
+        };
+
+        // Listeners
+        document.getElementById('reseller-search').addEventListener('input', () => renderTable(allResellersCache));
+        
+        // Initial Load
+        loadResellers();
+
+    </script>
+</body>
+</html>

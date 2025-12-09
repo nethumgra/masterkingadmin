@@ -23,13 +23,11 @@ export { auth, db };
 export function checkAdminAuth(requireAuth = true) {
     onAuthStateChanged(auth, async (user) => {
         const currentPath = window.location.pathname;
-        const pageName = currentPath.split('/').pop(); // Get the last part of URL
+        const pageName = currentPath.split('/').pop(); 
 
-        // Identify if we are on the login page
         const isLoginPage = pageName === "" || pageName === "index.html" || pageName === "admin-login.html";
 
         if (user) {
-            // 1. Hardcoded Admin Check
             if (user.email === "admin@gmail.com") {
                 if (isLoginPage) {
                     window.location.href = "dashboard.html";
@@ -37,18 +35,15 @@ export function checkAdminAuth(requireAuth = true) {
                 return;
             }
 
-            // 2. Database Admin Check
             try {
                 const userDocRef = doc(db, "users", user.uid);
                 const userDoc = await getDoc(userDocRef);
 
-                // Check for 'isAdmin' (Legacy) OR 'role' === 'admin' (New)
                 if (userDoc.exists() && (userDoc.data().isAdmin === true || userDoc.data().role === 'admin')) {
                     if (isLoginPage) {
                         window.location.href = "dashboard.html";
                     }
                 } else {
-                    // Not an admin
                     handleAccessDenied();
                 }
             } catch (error) {
@@ -56,7 +51,6 @@ export function checkAdminAuth(requireAuth = true) {
                 handleAccessDenied();
             }
         } else {
-            // No user logged in
             if (requireAuth && !isLoginPage) {
                 window.location.href = "index.html";
             }
@@ -107,6 +101,11 @@ export function renderSidebar(activePage) {
                 <span class="ml-2">Orders</span>
             </a>
 
+            <a href="reseller_orders.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'reseller_orders' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
+                <i class="fa fa-boxes-packing w-6 text-lg transition-transform group-hover:scale-110"></i>
+                <span class="ml-2">Reseller Orders</span>
+            </a>
+
             <a href="products.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'products' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
                 <i class="fa fa-box w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Products</span>
@@ -124,6 +123,11 @@ export function renderSidebar(activePage) {
                 <span class="ml-2">Sellers</span>
             </a>
 
+            <a href="admin-resellers.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'resellers' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
+                <i class="fa fa-users w-6 text-lg transition-transform group-hover:scale-110"></i>
+                <span class="ml-2">Manage Resellers</span>
+            </a>
+
             <a href="loyalty.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'loyalty' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
                 <i class="fa fa-coins w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Loyalty</span>
@@ -133,9 +137,13 @@ export function renderSidebar(activePage) {
                 <i class="fa fa-bullhorn w-6 text-lg transition-transform group-hover:scale-110"></i>
                 <span class="ml-2">Marketing</span>
             </a>
-             <a href="affiliates.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'marketing' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
+             <a href="affiliates.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'affiliates' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
                 <i class="fa fa-bullhorn w-6 text-lg transition-transform group-hover:scale-110"></i>
-                <span class="ml-2">Affliates</span>
+                <span class="ml-2">Affiliates</span>
+            </a>
+             <a href="settings.html" class="flex items-center px-4 py-3 text-gray-600 hover:bg-pink-50 hover:text-pink-600 rounded-lg transition-all duration-200 group ${activePage === 'settings' ? 'bg-pink-50 text-pink-600 font-bold' : ''}">
+                <i class="fa fa-cog w-6 text-lg transition-transform group-hover:scale-110"></i>
+                <span class="ml-2">Settings</span>
             </a>
         </nav>
 
@@ -163,6 +171,17 @@ export function renderSidebar(activePage) {
         document.getElementById('admin-logout-btn')?.addEventListener('click', async () => {
             await signOut(auth);
             window.location.href = "index.html";
+        });
+
+        // Mobile menu toggle logic
+        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+            const sidebar = document.querySelector('aside');
+            if (sidebar) {
+                sidebar.classList.toggle('hidden');
+                sidebar.classList.toggle('flex');
+                sidebar.classList.toggle('w-full');
+                sidebar.classList.toggle('z-50');
+            }
         });
     }, 500);
 }
