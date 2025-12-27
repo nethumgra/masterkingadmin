@@ -59,7 +59,6 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            <!-- 1. AI Security Sentinel -->
             <div class="bg-gradient-to-br from-indigo-900 to-blue-800 p-6 rounded-xl shadow-lg text-white border border-indigo-700 relative overflow-hidden group">
                 <div class="absolute top-0 right-0 p-4 opacity-10">
                     <i class="fa fa-shield-halved text-9xl"></i>
@@ -90,7 +89,6 @@
                 </div>
             </div>
 
-            <!-- 2. Payment & Logistics Control (NEW & IMPROVED) -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
                     <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
@@ -104,11 +102,9 @@
 
                 <div class="space-y-5">
                     
-                    <!-- Global Payment Toggles -->
                     <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 space-y-3">
                         <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Active Payment Methods</h3>
                         
-                        <!-- COD Toggle -->
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <i class="fa fa-truck text-gray-500"></i>
@@ -120,7 +116,6 @@
                             </label>
                         </div>
 
-                        <!-- Online Payment Toggle -->
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <i class="fa fa-credit-card text-gray-500"></i>
@@ -132,7 +127,6 @@
                             </label>
                         </div>
 
-                        <!-- Bank Transfer Toggle -->
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <i class="fa fa-university text-gray-500"></i>
@@ -145,7 +139,6 @@
                         </div>
                     </div>
 
-                    <!-- COD Verification Logic -->
                     <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
                         <div class="flex items-center gap-2 mb-2">
                             <input type="checkbox" id="cod-verification-check" class="h-4 w-4 text-blue-600 rounded cursor-pointer">
@@ -156,7 +149,6 @@
                         </p>
                     </div>
 
-                    <!-- Limits & Fees -->
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Max COD Limit (LKR)</label>
@@ -174,7 +166,6 @@
                 </div>
             </div>
 
-            <!-- 3. AI Config Card (Dual Key + Model Select) -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
                     <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
@@ -213,7 +204,6 @@
                 </div>
             </div>
 
-            <!-- 4. Commission Rates -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
                     <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
@@ -238,7 +228,6 @@
                 </div>
             </div>
 
-            <!-- 5. Legal & Policy AI -->
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
                     <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
@@ -261,7 +250,27 @@
                 </div>
             </div>
 
-            <!-- 6. Danger Zone -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+                    <div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-600">
+                        <i class="fa fa-headset text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Contact Settings</h2>
+                        <p class="text-xs text-gray-500">Header Hotline</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Header Hotline Number</label>
+                        <input type="text" id="hotline-number" class="w-full p-2 border border-gray-300 rounded text-sm" placeholder="e.g. 077 123 4567">
+                    </div>
+                    <button onclick="saveContactSettings()" id="save-contact-btn" class="w-full bg-teal-600 text-white py-2 rounded font-bold text-sm hover:bg-teal-700 transition">
+                        Update Contact Info
+                    </button>
+                </div>
+            </div>
+
             <div class="lg:col-span-2 bg-red-50 p-6 rounded-xl shadow-sm border border-red-200 mt-2 transition-all duration-300">
                 <div class="flex items-center gap-3 mb-4 pb-4 border-b border-red-100">
                     <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
@@ -299,20 +308,36 @@
         </div>
     </main>
 
-    <script type="module">
+  <script type="module">
         import { renderSidebar, checkAdminAuth, db } from "./common.js";
         import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         checkAdminAuth();
         renderSidebar('settings');
 
+        // --- Paths & References ---
+        // Index.html eka use karana path ekama methanata gannawa
+        const appId = 'default-app-id'; // Oyaage App ID eka methana thiyenna one (index.html eke logic eka anuwa)
+        const publicDataPath = `/artifacts/${appId}/public/data`;
+
         const aiConfigRef = doc(db, 'config', 'ai_keys');
         const platformConfigRef = doc(db, 'config', 'platform_settings');
+        
+        // MENNA ALUTH PATH EKA: Index.html eka hotline eka ganne methanin
+        const siteConfigRef = doc(db, publicDataPath, 'siteContent', 'config');
 
         // --- Load Settings ---
         async function loadSettings() {
             try {
-                // AI Settings
+                // 1. Load Hotline (From Site Config - same as index.html)
+                const siteSnap = await getDoc(siteConfigRef);
+                if (siteSnap.exists()) {
+                    const data = siteSnap.data();
+                    // Index.html uses 'headerHotline'
+                    document.getElementById('hotline-number').value = data.headerHotline || '';
+                }
+
+                // 2. AI Settings
                 const aiSnap = await getDoc(aiConfigRef);
                 if (aiSnap.exists()) {
                     const data = aiSnap.data();
@@ -327,7 +352,7 @@
                     }
                 }
 
-                // Platform Settings
+                // 3. Platform Settings (Payments, Maintenance, etc.)
                 const platSnap = await getDoc(platformConfigRef);
                 if (platSnap.exists()) {
                     const data = platSnap.data();
@@ -355,20 +380,50 @@
 
                     updateSystemHealthBadge(isMaint);
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Error loading settings:", e); }
         }
+
+        // --- SAVE Contact Settings (Matches index.html path) ---
+        window.saveContactSettings = async () => {
+            const btn = document.getElementById('save-contact-btn');
+            const hotline = document.getElementById('hotline-number').value;
+            
+            btn.innerHTML = 'Saving...'; btn.disabled = true;
+
+            try {
+                // Methana save karanne 'siteConfigRef' ekata (index.html eka read karana thana)
+                // Field eka 'headerHotline' wenna one index.html eka anuwa
+                await setDoc(siteConfigRef, { 
+                    headerHotline: hotline,
+                    updatedAt: serverTimestamp() 
+                }, { merge: true });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Updated!',
+                    text: 'Hotline number updated for the website.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } catch(e) {
+                console.error(e);
+                Swal.fire('Error', e.message, 'error');
+            } finally {
+                btn.innerHTML = 'Update Contact Info'; btn.disabled = false;
+            }
+        };
 
         // --- Save Payment & Business Logic ---
         window.saveBusinessSettings = async () => {
             const btn = document.getElementById('save-biz-btn');
-            btn.innerHTML = 'Saving...'; btn.disabled = true;
-
             const codEnabled = document.getElementById('cod-toggle').checked;
             const onlineEnabled = document.getElementById('online-pay-toggle').checked;
             const bankEnabled = document.getElementById('bank-pay-toggle').checked;
             const codVerify = document.getElementById('cod-verification-check').checked;
             const maxCod = Number(document.getElementById('max-cod-limit').value);
             const shipping = Number(document.getElementById('base-shipping-fee').value);
+            
+            btn.innerHTML = 'Saving...'; btn.disabled = true;
 
             try {
                 await setDoc(platformConfigRef, {
@@ -380,9 +435,9 @@
                     shippingFee: shipping,
                     updatedAt: serverTimestamp()
                 }, { merge: true });
-                alert("✅ Payment Rules Updated!");
+                Swal.fire('Success', 'Payment Rules Updated!', 'success');
             } catch(e) {
-                alert("Error: " + e.message);
+                Swal.fire('Error', e.message, 'error');
             } finally {
                 btn.innerHTML = 'Save Payment Rules'; btn.disabled = false;
             }

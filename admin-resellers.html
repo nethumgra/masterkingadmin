@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Resellers - Mudalali Mama</title>
+    <title>Manage Resellers - TUTU Admin</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
@@ -18,7 +16,8 @@
                     colors: {
                         'mudalali-green': '#3a6a4a',
                         'admin-gray': '#1f2937',
-                        'ban-red': '#ef4444'
+                        'ban-red': '#ef4444',
+                        'tutu-rose': '#e11d48'
                     }
                 }
             }
@@ -103,7 +102,6 @@
 
     <div id="view-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm p-4">
         <div class="bg-white w-full max-w-5xl max-h-[95vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-all scale-100">
-            
             <div class="bg-white px-6 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
                 <div>
                     <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -115,11 +113,8 @@
                     <i class="fa-solid fa-times text-lg"></i>
                 </button>
             </div>
-
             <div class="p-6 overflow-y-auto custom-scrollbar bg-gray-50 flex-grow">
-                
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
                     <div class="lg:col-span-1 space-y-6">
                         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm text-center">
                             <div class="w-20 h-20 bg-gray-200 rounded-full mx-auto flex items-center justify-center text-2xl font-bold text-gray-500 mb-3 border-4 border-white shadow-sm">
@@ -129,7 +124,6 @@
                             <p id="v-email" class="text-sm text-gray-500 mb-2">--</p>
                             <span id="v-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600">--</span>
                         </div>
-
                         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                             <h4 class="font-bold text-gray-700 text-xs uppercase mb-3 border-b pb-2">Contact Info</h4>
                             <div class="space-y-3 text-sm">
@@ -138,51 +132,39 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="lg:col-span-2 space-y-6">
-                        
                         <div class="bg-white p-5 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
                             <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fa fa-store text-6xl text-blue-500"></i></div>
                             <h4 class="text-blue-800 font-bold mb-4 flex items-center gap-2 text-sm uppercase">
-                                <i class="fa-solid fa-shop"></i> Shop Details
+                                <i class="fa-solid fa-shop"></i> Shop/Business Details
                             </h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm relative z-10">
                                 <div>
-                                    <span class="text-gray-400 text-xs block mb-1">Shop Name</span>
+                                    <span class="text-gray-400 text-xs block mb-1">Business Name</span>
                                     <span id="v-shopname" class="font-bold text-gray-800 text-lg">--</span>
                                 </div>
                                 <div>
-                                    <span class="text-gray-400 text-xs block mb-1">Shop Address</span>
+                                    <span class="text-gray-400 text-xs block mb-1">Business Address</span>
                                     <span id="v-address" class="font-semibold text-gray-800">--</span>
                                 </div>
                             </div>
                         </div>
-
                         <div class="bg-white p-5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden">
                             <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fa fa-bank text-6xl text-green-500"></i></div>
                             <h4 class="text-green-800 font-bold mb-4 flex items-center gap-2 text-sm uppercase">
                                 <i class="fa-solid fa-money-check-dollar"></i> Bank Details
                             </h4>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm relative z-10">
+                            <div class="grid grid-cols-2 md:grid-cols-2 gap-4 text-sm relative z-10">
                                 <div class="bg-green-50 p-2 rounded border border-green-100">
-                                    <span class="text-green-600 text-[10px] font-bold uppercase block">Bank</span>
+                                    <span class="text-green-600 text-[10px] font-bold uppercase block">Bank Name</span>
                                     <span id="v-bank" class="font-bold text-gray-800">--</span>
                                 </div>
                                 <div class="bg-green-50 p-2 rounded border border-green-100">
-                                    <span class="text-green-600 text-[10px] font-bold uppercase block">Branch</span>
-                                    <span id="v-branch" class="font-bold text-gray-800">--</span>
-                                </div>
-                                <div class="bg-green-50 p-2 rounded border border-green-100">
-                                    <span class="text-green-600 text-[10px] font-bold uppercase block">Holder</span>
-                                    <span id="v-acc-name" class="font-bold text-gray-800">--</span>
-                                </div>
-                                <div class="bg-green-50 p-2 rounded border border-green-100">
-                                    <span class="text-green-600 text-[10px] font-bold uppercase block">Number</span>
+                                    <span class="text-green-600 text-[10px] font-bold uppercase block">Account Number</span>
                                     <span id="v-acc-num" class="font-mono font-bold text-gray-800">--</span>
                                 </div>
                             </div>
                         </div>
-
                         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                             <h4 class="text-gray-600 font-bold mb-4 flex items-center gap-2 text-sm uppercase">
                                 <i class="fa-solid fa-image"></i> ID Card Photos
@@ -193,7 +175,7 @@
                                     <div class="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-300 relative group cursor-pointer shadow-inner" onclick="openImage(document.getElementById('v-nic-front').src)">
                                         <img id="v-nic-front" src="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400?text=No+Image'">
                                         <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center text-white opacity-0 group-hover:opacity-100 font-bold">
-                                            <i class="fa fa-expand mr-2"></i> View
+                                            <i class="fa fa-expand mr-2"></i> View Full Image
                                         </div>
                                     </div>
                                 </div>
@@ -202,7 +184,7 @@
                                     <div class="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-300 relative group cursor-pointer shadow-inner" onclick="openImage(document.getElementById('v-nic-back').src)">
                                         <img id="v-nic-back" src="" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x400?text=No+Image'">
                                         <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center text-white opacity-0 group-hover:opacity-100 font-bold">
-                                            <i class="fa fa-expand mr-2"></i> View
+                                            <i class="fa fa-expand mr-2"></i> View Full Image
                                         </div>
                                     </div>
                                 </div>
@@ -210,25 +192,18 @@
                         </div>
                     </div>
                 </div>
-
             </div>
-
             <div class="bg-white px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 z-20 shadow-lg">
-                <div class="text-xs text-gray-400 font-mono">
-                    UID: <span id="v-uid">--</span>
-                </div>
-                
+                <div class="text-xs text-gray-400 font-mono">UID: <span id="v-uid">--</span></div>
                 <div class="flex gap-3 w-full sm:w-auto">
                     <button onclick="banReseller()" id="btn-ban" class="flex-1 sm:flex-none px-4 py-2.5 bg-white border border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-ban"></i> Ban User
                     </button>
-
                     <button onclick="updateStatus('rejected')" id="btn-reject" class="flex-1 sm:flex-none px-4 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-times"></i> Reject
                     </button>
-
                     <button onclick="updateStatus('approved')" id="btn-approve" class="flex-1 sm:flex-none px-6 py-2.5 bg-mudalali-green text-white font-bold rounded-xl hover:bg-green-800 shadow-lg shadow-green-200 hover:shadow-xl transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-check-circle"></i> Approve
+                        <i class="fa-solid fa-check-circle"></i> Approve Application
                     </button>
                 </div>
             </div>
@@ -239,20 +214,18 @@
         import { renderSidebar, checkAdminAuth, db, showToast } from "./common.js";
         import { collection, getDocs, doc, updateDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Init
         checkAdminAuth();
-        renderSidebar('manage_resellers'); // Make sure to add this ID to your common.js sidebar list if needed
+        renderSidebar('manage_resellers');
 
         let allResellers = [];
         let currentUser = null;
 
-        // --- 1. Fetch Data ---
+        // --- 1. Fetch Data (Update Filter Logic) ---
         window.fetchResellers = async () => {
             const tbody = document.getElementById('resellers-table-body');
             tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center"><i class="fa fa-spinner fa-spin text-2xl text-mudalali-green"></i></td></tr>';
 
             try {
-                // Fetch users who are sellers or have requested to be
                 const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
                 const querySnapshot = await getDocs(q);
                 
@@ -261,21 +234,23 @@
 
                 querySnapshot.forEach((doc) => {
                     const d = doc.data();
-                    // Basic filter to find relevant users
-                    if (d.shopName || d.sellerStatus) {
+                    
+                    // Sandhya වගේ අයව අහුකරගන්න d.wantsToBeReseller හෝ d.role පරීක්ෂා කරන්න
+                    if (d.shopName || d.sellerStatus || d.wantsToBeReseller || (d.role && d.role.includes('reseller'))) {
                         const r = { id: doc.id, ...d };
                         data.push(r);
                         
                         counts.total++;
-                        if (r.sellerStatus === 'approved') counts.active++;
-                        else if (r.sellerStatus === 'banned') counts.banned++;
+                        // Status එක තීරණය කිරීම (Default pending)
+                        const status = d.sellerStatus || 'pending';
+                        
+                        if (status === 'approved') counts.active++;
+                        else if (status === 'banned') counts.banned++;
                         else counts.pending++;
                     }
                 });
 
                 allResellers = data;
-                
-                // Update Stats
                 document.getElementById('stat-total').innerText = counts.total;
                 document.getElementById('stat-pending').innerText = counts.pending;
                 document.getElementById('stat-active').innerText = counts.active;
@@ -289,7 +264,7 @@
             }
         };
 
-        // --- 2. Render Table ---
+        // --- 2. Render Table (Update for Nested resellerDetails) ---
         function renderTable(data) {
             const tbody = document.getElementById('resellers-table-body');
             tbody.innerHTML = '';
@@ -300,27 +275,31 @@
             }
 
             data.forEach(r => {
+                // resellerDetails ඇතුළේ ඇති දත්ත ලබා ගැනීම
+                const det = r.resellerDetails || {};
                 const status = r.sellerStatus || 'pending';
+                
+                const displayName = r.name || 'Unknown User';
+                const displayShop = r.shopName || det.shopName || 'Application Pending';
+                const displayNic = r.nic || det.nic || '-';
+                const displayPhone = r.phone || det.phone || '-';
+
                 let badgeClass = '';
                 let badgeIcon = '';
                 let badgeText = '';
 
                 if(status === 'approved') {
                     badgeClass = 'bg-green-100 text-green-700 border-green-200';
-                    badgeIcon = 'fa-check';
-                    badgeText = 'Active';
+                    badgeIcon = 'fa-check'; badgeText = 'Active';
                 } else if(status === 'rejected') {
                     badgeClass = 'bg-red-100 text-red-700 border-red-200';
-                    badgeIcon = 'fa-times';
-                    badgeText = 'Rejected';
+                    badgeIcon = 'fa-times'; badgeText = 'Rejected';
                 } else if(status === 'banned') {
                     badgeClass = 'bg-gray-800 text-white border-black';
-                    badgeIcon = 'fa-ban';
-                    badgeText = 'Banned';
+                    badgeIcon = 'fa-ban'; badgeText = 'Banned';
                 } else {
                     badgeClass = 'bg-yellow-100 text-yellow-700 border-yellow-200 animate-pulse';
-                    badgeIcon = 'fa-clock';
-                    badgeText = 'Pending';
+                    badgeIcon = 'fa-clock'; badgeText = 'Pending';
                 }
 
                 const row = document.createElement('tr');
@@ -329,21 +308,21 @@
                     <td class="p-4">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500 uppercase">
-                                ${r.name ? r.name.charAt(0) : 'U'}
+                                ${displayName.charAt(0)}
                             </div>
                             <div>
-                                <div class="font-bold text-gray-800 text-sm">${r.name || 'Unknown'}</div>
+                                <div class="font-bold text-gray-800 text-sm">${displayName}</div>
                                 <div class="text-xs text-gray-500">${r.email || '-'}</div>
                             </div>
                         </div>
                     </td>
                     <td class="p-4">
-                        <div class="font-bold text-gray-700 text-sm">${r.shopName || '-'}</div>
-                        <div class="text-xs text-gray-500 truncate w-32">${r.shopAddress || '-'}</div>
+                        <div class="font-bold text-gray-700 text-sm">${displayShop}</div>
+                        <div class="text-xs text-gray-500 truncate w-32">${r.shopAddress || det.address || '-'}</div>
                     </td>
                     <td class="p-4 text-sm text-gray-600 font-mono">
-                        <div><i class="fa fa-id-card text-gray-300 mr-1"></i> ${r.nic || '-'}</div>
-                        <div><i class="fa fa-phone text-gray-300 mr-1"></i> ${r.phone || '-'}</div>
+                        <div><i class="fa fa-id-card text-gray-300 mr-1"></i> ${displayNic}</div>
+                        <div><i class="fa fa-phone text-gray-300 mr-1"></i> ${displayPhone}</div>
                     </td>
                     <td class="p-4 text-center">
                         <span class="px-3 py-1 rounded-full text-xs font-bold border ${badgeClass}">
@@ -360,52 +339,48 @@
             });
         }
 
-        // --- 3. View Modal Logic (Populate All Fields) ---
+        // --- 3. View Modal Logic (Update Field Mapping) ---
         window.viewDetails = (uid) => {
             const r = allResellers.find(x => x.id === uid);
             if(!r) return;
             currentUser = r;
+            const det = r.resellerDetails || {};
 
-            // Helper to set text
             const set = (id, val) => document.getElementById(id).textContent = val || '--';
-            const setVal = (id, val) => document.getElementById(id).value = val || '';
             const setImg = (id, url) => document.getElementById(id).src = url || 'https://placehold.co/600x400?text=No+Image';
 
             set('v-avatar', r.name ? r.name.charAt(0).toUpperCase() : 'U');
             set('v-fullname', r.name);
             set('v-email', r.email);
-            set('v-phone', r.phone);
-            set('v-nic', r.nic);
+            set('v-phone', r.phone || det.phone);
+            set('v-nic', r.nic || det.nic);
             set('v-uid', r.id);
-            set('v-shopname', r.shopName);
-            set('v-address', r.shopAddress || r.address);
+            set('v-shopname', r.shopName || det.shopName || 'Reseller Registration');
+            set('v-address', r.shopAddress || det.address || r.address || '--');
 
-            // Bank
-            set('v-bank', r.bankName);
-            set('v-branch', r.branchName);
-            set('v-acc-name', r.accountName);
-            set('v-acc-num', r.accountNumber);
+            // Bank Mapping (Screenshot එක අනුව det.bank සහ det.accountNo පාවිච්චි වේ)
+            set('v-bank', det.bank || r.bankName);
+            set('v-acc-num', det.accountNo || r.accountNumber);
 
             // Images
-            setImg('v-nic-front', r.nicFrontUrl);
-            setImg('v-nic-back', r.nicBackUrl);
+            setImg('v-nic-front', det.nicFrontUrl || r.nicFrontUrl);
+            setImg('v-nic-back', det.nicBackUrl || r.nicBackUrl);
 
-            // Status Badge in Modal
-            const badge = document.getElementById('v-status-badge');
-            badge.textContent = (r.sellerStatus || 'Pending').toUpperCase();
+            // Button Control
+            const status = r.sellerStatus || 'pending';
+            document.getElementById('v-status-badge').textContent = status.toUpperCase();
             
-            // Toggle Buttons based on status
             const btnApprove = document.getElementById('btn-approve');
             const btnReject = document.getElementById('btn-reject');
             const btnBan = document.getElementById('btn-ban');
 
-            if (r.sellerStatus === 'approved') {
+            if (status === 'approved') {
                 btnApprove.classList.add('hidden');
                 btnReject.classList.remove('hidden');
-            } else if (r.sellerStatus === 'banned') {
-                btnApprove.classList.remove('hidden'); // Allow un-ban
+            } else if (status === 'banned') {
+                btnApprove.classList.remove('hidden');
                 btnReject.classList.add('hidden');
-                btnBan.textContent = "Un-Ban User"; // Change text
+                btnBan.textContent = "Un-Ban User";
             } else {
                 btnApprove.classList.remove('hidden');
                 btnReject.classList.remove('hidden');
@@ -416,39 +391,30 @@
         };
 
         window.closeModal = () => document.getElementById('view-modal').classList.add('hidden');
-        window.openImage = (url) => { if(!url.includes('placehold.co')) window.open(url, '_blank'); };
+        window.openImage = (url) => { if(url && !url.includes('placehold.co')) window.open(url, '_blank'); };
 
-        // --- 4. Actions (Approve, Reject, Ban) ---
-        
+        // --- 4. Actions ---
         window.updateStatus = async (status) => {
             if(!currentUser) return;
-            
-            // Determine logic
             const isApprove = status === 'approved';
-            
-            // Confirm
             const result = await Swal.fire({
                 title: isApprove ? 'Approve Reseller?' : 'Reject Application?',
-                text: isApprove ? "They will gain access to reseller prices." : "They will be marked as rejected.",
+                text: isApprove ? "They will gain access to reseller prices." : "This application will be rejected.",
                 icon: isApprove ? 'success' : 'warning',
                 showCancelButton: true,
                 confirmButtonColor: isApprove ? '#3a6a4a' : '#d33',
                 confirmButtonText: isApprove ? 'Yes, Approve' : 'Yes, Reject'
             });
 
-            if(result.isConfirmed) {
-                performUpdate(status, isApprove); // isSeller = true only if approved
-            }
+            if(result.isConfirmed) performUpdate(status, isApprove);
         };
 
         window.banReseller = async () => {
             if(!currentUser) return;
-            
             const isCurrentlyBanned = currentUser.sellerStatus === 'banned';
-            
             const result = await Swal.fire({
                 title: isCurrentlyBanned ? 'Un-Ban User?' : 'BAN USER?',
-                text: isCurrentlyBanned ? "Restore access?" : "This will immediately revoke all access.",
+                text: isCurrentlyBanned ? "Restore user access?" : "This will immediately revoke all access.",
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: isCurrentlyBanned ? '#3a6a4a' : '#000',
@@ -456,8 +422,6 @@
             });
 
             if(result.isConfirmed) {
-                // If banning -> status='banned', isSeller=false
-                // If unbanning -> status='pending' (safety), isSeller=false
                 const newStatus = isCurrentlyBanned ? 'pending' : 'banned';
                 performUpdate(newStatus, false);
             }
@@ -467,25 +431,33 @@
             try {
                 Swal.fire({ title: 'Updating...', didOpen: () => Swal.showLoading() });
                 
-                await updateDoc(doc(db, 'users', currentUser.id), {
+                // Approve කරනවා නම් role එක 'reseller' වලටත් update කළ යුතුය
+                let updateData = {
                     sellerStatus: status,
                     isSeller: isSellerBool
-                });
+                };
 
-                // Update Local UI
+                if (status === 'approved') {
+                    updateData.role = 'reseller';
+                } else if (status === 'rejected') {
+                    updateData.role = 'customer';
+                }
+
+                await updateDoc(doc(db, 'users', currentUser.id), updateData);
+
+                // Local Update
                 const idx = allResellers.findIndex(x => x.id === currentUser.id);
                 if(idx !== -1) {
                     allResellers[idx].sellerStatus = status;
                     allResellers[idx].isSeller = isSellerBool;
+                    if(updateData.role) allResellers[idx].role = updateData.role;
                 }
                 
                 renderTable(allResellers);
                 closeModal();
-                
-                // Recalc stats
-                fetchResellers(); // Lazy refresh to update counts correcty
+                fetchResellers(); 
 
-                Swal.fire({ icon: 'success', title: 'Updated!', timer: 1000, showConfirmButton: false });
+                Swal.fire({ icon: 'success', title: 'Action Successful!', timer: 1000, showConfirmButton: false });
 
             } catch (e) {
                 console.error(e);
@@ -493,20 +465,21 @@
             }
         }
 
-        // --- 5. Search ---
+        // Search update (looking into resellerDetails as well)
         document.getElementById('search-input').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            const filtered = allResellers.filter(r => 
-                (r.name && r.name.toLowerCase().includes(term)) ||
-                (r.shopName && r.shopName.toLowerCase().includes(term)) ||
-                (r.nic && r.nic.toLowerCase().includes(term))
-            );
+            const filtered = allResellers.filter(r => {
+                const det = r.resellerDetails || {};
+                return (r.name && r.name.toLowerCase().includes(term)) ||
+                       (r.shopName && r.shopName.toLowerCase().includes(term)) ||
+                       (det.shopName && det.shopName.toLowerCase().includes(term)) ||
+                       (r.nic && r.nic.toLowerCase().includes(term)) ||
+                       (det.nic && det.nic.toLowerCase().includes(term));
+            });
             renderTable(filtered);
         });
 
-        // Load Data on Start
         fetchResellers();
-
     </script>
 </body>
 </html>

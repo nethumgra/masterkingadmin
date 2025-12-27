@@ -98,7 +98,7 @@ function renderSidebar(activePage) {
         { header: 'Management' }, 
         
        
-       { id: 'resellers', name: 'Manage Resellers', icon: 'fa-users', link: 'manage_resellers.html' },
+       { id: 'resellers', name: 'Manage Resellers', icon: 'fa-users', link: 'admin-resellers.html' },
     { id: 'loyalty', name: 'Loyalty', icon: 'fa-coins', link: 'loyalty.html' },
     { id: 'marketing', name: 'Marketing', icon: 'fa-bullhorn', link: 'marketing.html' },
     { id: 'affiliates', name: 'Affiliates', icon: 'fa-handshake', link: 'affiliates.html' }, // Icon Fixed ✅
