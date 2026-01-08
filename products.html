@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Manager Pro (Main & Sub) - TUTU Admin</title>
+    <title>Product Manager Pro - TUTU Admin</title>
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,7 +18,7 @@
                     colors: {
                         'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' },
                         'ai-purple': '#8b5cf6',
-                        'risk-red': '#dc2626'
+                        'mudalali-green': '#3a6a4a'
                     }
                 }
             }
@@ -32,17 +32,20 @@
             animation: gradient-xy 3s ease infinite;
         }
         @keyframes gradient-xy { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-        .modal-scroll::-webkit-scrollbar { width: 8px; }
-        .modal-scroll::-webkit-scrollbar-thumb { background-color: #fbcfe8; border-radius: 4px; }
-        .modal-scroll::-webkit-scrollbar-thumb:hover { background-color: #db2777; }
-        .score-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; border: 3px solid #eee; }
+        
+        .modal-scroll::-webkit-scrollbar { width: 6px; }
+        .modal-scroll::-webkit-scrollbar-thumb { background-color: #fbcfe8; border-radius: 10px; }
+        
+        .score-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid #eee; }
         .score-high { border-color: #22c55e; color: #15803d; background: #f0fdf4; }
         .score-mid { border-color: #eab308; color: #a16207; background: #fefce8; }
         .score-low { border-color: #ef4444; color: #b91c1c; background: #fef2f2; }
+        
         .mic-listening { animation: pulse-red 1.5s infinite; background-color: #fee2e2 !important; color: #dc2626 !important; border-color: #dc2626 !important; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); } }
-        .upload-overlay { transition: all 0.3s ease; opacity: 0; }
-        .group:hover .upload-overlay { opacity: 1; }
+        
+        .img-grid-item { transition: all 0.3s ease; border: 2px solid transparent; cursor: pointer; }
+        .img-grid-item.active { border-color: #db2777; transform: scale(1.05); }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
@@ -50,261 +53,228 @@
     <div id="sidebar-container"></div>
 
     <main class="md:ml-64 p-8 mt-12 md:mt-0">
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Product Command Center</h1>
-                <p class="text-sm text-tutu-pink font-medium">Main & Sub Category System • AI Powered</p>
+                <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Product Command Center 🚀</h1>
+                <p class="text-sm text-gray-500 font-medium">Manage Inventory with Multi-Model AI Analysis</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="openCreateModal()" class="bg-tutu-pink text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-tutu-pink-dark hover:shadow-xl transition-all flex items-center gap-2 transform hover:-translate-y-0.5">
-                    <i class="fa fa-plus-circle"></i> Create Product
+                <button onclick="openCreateModal()" class="bg-tutu-pink text-white px-6 py-2.5 rounded-xl font-bold shadow-lg hover:bg-tutu-pink-dark transition-all transform hover:scale-105 flex items-center gap-2">
+                    <i class="fa fa-plus-circle"></i> Add Product
                 </button>
-                <button onclick="resetAndReload()" class="text-xs font-bold text-gray-500 hover:text-tutu-pink hover:underline transition-colors flex items-center gap-1 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
-                    <i class="fa fa-sync-alt"></i> Refresh
+                <button onclick="loadProducts(true)" class="bg-white border border-gray-200 text-gray-600 px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-gray-50 transition shadow-sm">
+                    <i class="fa fa-sync-alt"></i>
                 </button>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-yellow-500 transition hover:shadow-md">
-                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Pending Review</p>
-                <h2 class="text-3xl font-bold mt-1 text-yellow-600" id="stat-pending">...</h2>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-yellow-500">
+                <p class="text-gray-400 text-xs font-bold uppercase tracking-wider">Pending Approval</p>
+                <h2 class="text-3xl font-bold text-yellow-600 mt-1" id="stat-pending">...</h2>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-green-500 transition hover:shadow-md">
-                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Live Products</p>
-                <h2 class="text-3xl font-bold mt-1 text-green-600" id="stat-live">...</h2>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-mudalali-green">
+                <p class="text-gray-400 text-xs font-bold uppercase tracking-wider">Live Listings</p>
+                <h2 class="text-3xl font-bold text-mudalali-green mt-1" id="stat-live">...</h2>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-red-500 transition hover:shadow-md">
-                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Rejected</p>
-                <h2 class="text-3xl font-bold mt-1 text-red-600" id="stat-rejected">...</h2>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-500">
+                <p class="text-gray-400 text-xs font-bold uppercase tracking-wider">Rejected</p>
+                <h2 class="text-3xl font-bold text-red-600 mt-1" id="stat-rejected">...</h2>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-tutu-pink transition hover:shadow-md">
-                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Categories</p>
-                <h2 class="text-3xl font-bold mt-1 text-tutu-pink" id="stat-cats">...</h2>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-tutu-pink">
+                <p class="text-gray-400 text-xs font-bold uppercase tracking-wider">Categories</p>
+                <h2 class="text-3xl font-bold text-tutu-pink mt-1" id="stat-cats">...</h2>
             </div>
         </div>
 
-        <div class="bg-white p-5 rounded-t-2xl border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm z-10 sticky top-20 md:top-0">
-            <div class="relative w-full md:w-80">
-                <i class="fa fa-search absolute left-3 top-3.5 text-gray-400"></i>
-                <input type="text" id="search-input" class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none transition-all bg-pink-50/20" placeholder="Search products...">
-            </div>
-            <div class="flex gap-3 flex-wrap md:flex-nowrap w-full md:w-auto">
-                <div class="relative">
-                    <select id="category-filter" class="appearance-none p-2.5 pr-8 border border-gray-200 rounded-xl bg-gray-50 outline-none text-sm font-semibold text-gray-600 focus:ring-2 focus:ring-tutu-pink cursor-pointer w-full" onchange="filterProducts()">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b bg-gray-50/50 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="relative w-full md:w-96">
+                    <i class="fa fa-search absolute left-4 top-3 text-gray-400"></i>
+                    <input type="text" id="search-input" class="w-full pl-10 pr-4 py-2 border rounded-xl focus:ring-2 focus:ring-tutu-pink outline-none text-sm" placeholder="Search by name or category...">
+                </div>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <select id="category-filter" onchange="loadProducts(true)" class="p-2 border rounded-xl bg-white text-xs font-bold outline-none flex-grow">
                         <option value="all">All Categories</option>
                     </select>
-                    <i class="fa fa-chevron-down absolute right-3 top-3.5 text-xs text-gray-400 pointer-events-none"></i>
-                </div>
-                <div class="relative">
-                    <select id="status-filter" class="appearance-none p-2.5 pr-8 border border-gray-200 rounded-xl bg-gray-50 outline-none text-sm font-semibold text-gray-600 focus:ring-2 focus:ring-tutu-pink cursor-pointer w-full" onchange="filterProducts()">
+                    <select id="status-filter" onchange="loadProducts(true)" class="p-2 border rounded-xl bg-white text-xs font-bold outline-none flex-grow">
                         <option value="all">All Status</option>
-                        <option value="pending">Pending</option>
+                        <option value="pending">Pending Approval</option>
                         <option value="approved">Live</option>
                         <option value="rejected">Rejected</option>
                     </select>
-                    <i class="fa fa-chevron-down absolute right-3 top-3.5 text-xs text-gray-400 pointer-events-none"></i>
                 </div>
             </div>
-        </div>
 
-        <div class="bg-white rounded-b-2xl shadow-sm overflow-hidden min-h-[500px] border border-gray-100 border-t-0">
-            <table class="w-full text-left text-sm text-gray-600">
-                <thead class="bg-pink-50/50 text-gray-700 uppercase text-xs font-bold border-b border-pink-100 sticky top-0">
-                    <tr>
-                        <th class="p-4">Product Info</th>
-                        <th class="p-4">Category</th>
-                        <th class="p-4 text-center">Score</th>
-                        <th class="p-4 text-center">Status</th>
-                        <th class="p-4 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="products-table-body" class="divide-y divide-gray-100"></tbody>
-            </table>
-            <div id="scroll-loader" class="p-6 text-center hidden">
-                <i class="fa fa-spinner fa-spin text-2xl text-tutu-pink"></i>
-                <p class="text-xs text-gray-400 mt-2 font-medium">Fetching more products...</p>
+            <div class="overflow-x-auto min-h-[400px]">
+                <table class="w-full text-left text-sm text-gray-600">
+                    <thead class="bg-white text-gray-500 uppercase text-[10px] font-black border-b sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th class="p-5">Product Info</th>
+                            <th class="p-5">Category / Hierarchy</th>
+                            <th class="p-5 text-center">Quality Score</th>
+                            <th class="p-5 text-center">Listing Status</th>
+                            <th class="p-5 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table-body" class="divide-y divide-gray-50">
+                        <tr><td colspan="5" class="p-10 text-center text-gray-400"><i class="fa fa-spinner fa-spin text-2xl"></i></td></tr>
+                    </tbody>
+                </table>
             </div>
-            <div id="end-of-list" class="p-6 text-center text-gray-300 text-xs hidden font-bold tracking-widest uppercase">-- End of List --</div>
+            
+            <div id="scroll-loader" class="p-4 text-center hidden"><i class="fa fa-circle-notch fa-spin text-tutu-pink"></i></div>
         </div>
     </main>
 
-    <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-md transition-opacity">
-        <div class="bg-white w-full max-w-6xl h-[95vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row transform transition-transform scale-100 my-4">
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-6xl h-[95vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row transform transition-all scale-100">
             
-            <div class="w-full md:w-1/3 bg-gray-900 flex flex-col p-6 relative border-r border-gray-800 overflow-y-auto custom-scrollbar">
-                <h3 class="text-white font-bold mb-4 flex items-center gap-2"><i class="fa fa-robot text-ai-purple"></i> AI Audit</h3>
+            <div class="w-full md:w-1/3 bg-gray-950 p-6 flex flex-col overflow-y-auto modal-scroll border-r border-gray-800">
+                <h3 class="text-white font-bold mb-6 flex items-center gap-2"><i class="fa fa-images text-tutu-pink"></i> Product Gallery</h3>
                 
-                <div class="relative group w-full aspect-square bg-black rounded-xl overflow-hidden border border-gray-700 mb-4 shadow-lg flex items-center justify-center cursor-pointer" onclick="document.getElementById('image-upload-input').click()">
-                    <img id="edit-img" src="https://placehold.co/400?text=Click+to+Upload" class="w-full h-full object-contain z-0">
-                    <div id="upload-overlay" class="upload-overlay absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white z-10">
-                        <i class="fa fa-cloud-upload-alt text-4xl mb-2 text-tutu-pink"></i>
-                        <span class="text-sm font-bold">Click to Upload Image</span>
+                <div class="relative group aspect-square bg-gray-900 rounded-2xl overflow-hidden border-2 border-dashed border-gray-800 mb-4 flex items-center justify-center cursor-pointer hover:border-tutu-pink transition-all" onclick="document.getElementById('image-upload-input').click()">
+                    <img id="edit-img-main" src="https://placehold.co/500?text=Upload+Images" class="w-full h-full object-contain">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity">
+                        <i class="fa fa-plus-circle text-4xl mb-2"></i>
+                        <span class="text-xs font-bold uppercase">Add Photos</span>
                     </div>
-                    <input type="file" id="image-upload-input" accept="image/*" class="hidden">
+                    <input type="file" id="image-upload-input" accept="image/*" multiple class="hidden">
                 </div>
-                <input type="hidden" id="edit-img-url">
-                <p id="upload-status" class="text-center text-xs font-bold mb-4 h-5 text-tutu-pink animate-pulse hidden">Uploading to ImgBB...</p>
 
-                <div class="bg-gray-800 rounded-2xl p-5 border border-gray-700 shadow-inner">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-gray-400 text-xs uppercase font-bold tracking-wider">Quality Score</span>
-                        <span id="modal-score-val" class="text-2xl font-bold text-white">0/100</span>
+                <div id="image-gallery-container" class="grid grid-cols-4 gap-2 mb-6"></div>
+
+                <div class="mt-auto bg-gray-900 border border-gray-800 p-5 rounded-2xl">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-gray-500 text-[10px] font-black uppercase tracking-widest">Listing Score</span>
+                        <span id="modal-score-val" class="text-xl font-bold text-white">0/100</span>
                     </div>
-                    <div class="w-full bg-gray-700 rounded-full h-2 mb-4 overflow-hidden">
-                        <div id="modal-score-bar" class="bg-green-500 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+                    <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden mb-4">
+                        <div id="modal-score-bar" class="h-full bg-tutu-pink transition-all duration-1000" style="width: 0%"></div>
                     </div>
-                    <div class="space-y-2" id="modal-audit-list"></div>
+                    <div id="modal-audit-list" class="space-y-1.5"></div>
                 </div>
             </div>
 
-            <div class="w-full md:w-2/3 flex flex-col">
-                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
-                    <div class="flex items-center gap-4">
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800">Product Details</h2>
-                            <p class="text-xs text-gray-400 font-mono mt-0.5">ID: <span id="modal-id">...</span></p>
-                        </div>
-                        <button onclick="magicFixProductVision()" id="btn-magic-fix" class="magic-btn text-white px-4 py-2 rounded-full font-bold shadow-md hover:shadow-lg hover:scale-105 transition flex items-center gap-2 text-xs border border-white/20">
-                            <i class="fa fa-wand-magic-sparkles"></i> AI Auto-Fill (Img + Voice)
-                        </button>
+            <div class="w-full md:w-2/3 flex flex-col bg-white overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white shadow-sm z-10">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800 tracking-tight" id="modal-title">Product Details</h2>
+                        <p class="text-[10px] text-gray-400 font-mono mt-0.5">UID: <span id="modal-id">...</span></p>
                     </div>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 text-2xl transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50">&times;</button>
+                    <div class="flex gap-2">
+                        <button onclick="magicFixProductVision()" id="btn-magic-fix" class="magic-btn text-white px-5 py-2.5 rounded-2xl font-bold shadow-lg hover:scale-105 transition-all flex items-center gap-2 text-xs">
+                            <i class="fa fa-wand-magic-sparkles"></i> AI AUTO-FILL
+                        </button>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 text-3xl">&times;</button>
+                    </div>
                 </div>
 
-                <div class="p-6 overflow-y-auto modal-scroll flex-grow space-y-5 bg-white">
+                <div class="p-8 overflow-y-auto modal-scroll flex-grow space-y-8">
                     
-                    <div class="bg-pink-50/50 p-4 rounded-2xl border border-pink-100">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="block text-xs font-bold text-tutu-pink uppercase tracking-wide"><i class="fa fa-microphone mr-1"></i> Voice Notes (Sinhala/English)</label>
-                            <button id="mic-btn" onclick="toggleVoiceRecognition()" class="bg-white text-gray-500 border border-gray-200 px-3 py-1 rounded-full text-xs font-bold hover:text-tutu-pink hover:border-tutu-pink transition-all flex items-center gap-1">
-                                <i class="fa fa-microphone-slash" id="mic-icon"></i> <span id="mic-text">Start Mic</span>
+                    <div class="bg-pink-50 p-5 rounded-2xl border border-pink-100 relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="text-[10px] font-black text-tutu-pink uppercase tracking-widest flex items-center gap-2"><i class="fa fa-microphone-alt"></i> Voice Note (Describe Product)</label>
+                            <button id="mic-btn" onclick="toggleVoiceRecognition()" class="bg-white border border-pink-200 px-3 py-1.5 rounded-full text-[10px] font-bold text-gray-600 hover:text-tutu-pink transition-all flex items-center gap-2">
+                                <i class="fa fa-microphone-slash" id="mic-icon"></i> <span id="mic-text">Start Recording</span>
                             </button>
                         </div>
-                        <textarea id="voice-input" rows="2" class="w-full p-3 border border-pink-200 rounded-xl text-sm focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none transition-all resize-none bg-white text-gray-600" placeholder="Speak details here... (e.g., 'Red saree, price 5000, silk material')"></textarea>
+                        <textarea id="voice-input" rows="2" class="w-full bg-white/50 border border-pink-100 rounded-xl p-3 text-sm focus:ring-2 focus:ring-tutu-pink outline-none resize-none" placeholder="e.g. 'Red floral dress, price 2500, silk material'"></textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-6">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Product Name</label>
-                            <input type="text" id="edit-name" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none font-bold text-gray-800 bg-gray-50/50 transition-all" placeholder="Auto-generated by AI">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Product Title</label>
+                            <input type="text" id="edit-name" class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-tutu-pink outline-none font-bold text-gray-800 transition-all">
                         </div>
                         
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Main Category</label>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Main Category</label>
+                            <select id="edit-category-main" onchange="loadSubCategories()" class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-bold text-gray-700"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Sub Category</label>
+                            <select id="edit-category-sub" class="w-full p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none font-bold text-gray-700 disabled:opacity-50" disabled></select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Retail Price (LKR)</label>
+                            <input type="number" id="edit-price" class="w-full p-4 bg-white border border-gray-100 rounded-2xl font-mono font-bold text-tutu-pink outline-none focus:ring-2 focus:ring-tutu-pink">
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Resell Price</label>
+                            <input type="number" id="edit-resell-price" class="w-full p-4 bg-white border border-gray-100 rounded-2xl font-mono font-bold text-blue-600 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Original</label>
+                            <input type="number" id="edit-orig-price" class="w-full p-4 bg-white border border-gray-100 rounded-2xl font-mono text-gray-400 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2">Min (Hidden)</label>
+                            <input type="number" id="edit-min-price" class="w-full p-4 bg-red-50 border border-red-100 rounded-2xl font-mono text-red-600 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-6 bg-gray-50 rounded-3xl border border-gray-100 flex gap-4 items-end">
+                            <div class="flex-grow">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Weight (KG)</label>
                                 <div class="relative">
-                                    <select id="edit-category-main" onchange="loadSubCategories()" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none transition-all appearance-none bg-white font-medium text-gray-700">
-                                        <option value="" disabled selected>Loading...</option>
-                                    </select>
-                                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none"><i class="fa fa-chevron-down text-gray-400 text-xs"></i></div>
+                                    <input type="number" step="0.1" id="edit-weight" oninput="calculateDelivery()" class="w-full p-4 bg-white border border-gray-100 rounded-2xl outline-none font-bold text-gray-800 focus:ring-2 focus:ring-tutu-pink transition-all" placeholder="0.0">
+                                    <span class="absolute right-4 top-4 text-gray-300 font-bold text-xs">KG</span>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Sub Category</label>
+                            <div class="flex-grow">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Ship Cost (LKR)</label>
                                 <div class="relative">
-                                    <select id="edit-category-sub" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none transition-all appearance-none bg-gray-50 font-medium text-gray-700 disabled:bg-gray-100 disabled:text-gray-400" disabled>
-                                        <option value="" disabled selected>Select Main First</option>
-                                    </select>
-                                    <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none"><i class="fa fa-chevron-down text-gray-400 text-xs"></i></div>
+                                    <input type="number" id="edit-delivery-price" class="w-full p-4 bg-white border border-gray-100 rounded-2xl outline-none font-bold text-tutu-pink focus:ring-2 focus:ring-tutu-pink transition-all" placeholder="0">
+                                    <span class="absolute right-4 top-4 text-gray-300 font-bold text-xs">Rs.</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="grid grid-cols-3 gap-6">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Price (LKR)</label>
-                            <input type="number" id="edit-price" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none font-mono font-bold text-tutu-pink bg-pink-50/10">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Original Price</label>
-                            <input type="number" id="edit-orig-price" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none font-mono text-gray-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Min Price (Hidden)</label>
-                            <input type="number" id="edit-min-price" class="w-full p-3 border border-red-200 bg-red-50/50 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none font-mono text-red-600">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-6 bg-gray-50 p-3 rounded-xl border border-gray-200">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Weight (KG)</label>
-                            <input type="number" step="0.01" id="edit-weight" oninput="calculateDelivery()" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none font-mono font-bold text-gray-700" placeholder="0.5">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wide">Delivery Cost (LKR)</label>
-                            <input type="number" id="edit-delivery-price" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none font-mono font-bold text-gray-700" placeholder="350">
-                        </div>
-                    </div>
-
-                    <div class="relative mt-4">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wide">Description</label>
-                            <span id="ai-status" class="text-xs text-ai-purple hidden animate-pulse font-bold bg-purple-50 px-2 py-0.5 rounded-md">✨ AI is processing...</span>
-                        </div>
-                        <textarea id="edit-desc" rows="3" class="w-full p-4 border border-gray-200 rounded-xl text-sm leading-relaxed focus:ring-2 focus:ring-tutu-pink focus:border-transparent outline-none transition-all resize-none bg-gray-50/30" placeholder="Auto-generated description will appear here."></textarea>
-                    </div>
-
-                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-200 mt-4">
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-3 tracking-wide flex items-center gap-2">
-                            <i class="fa fa-layer-group text-tutu-pink"></i> Product Variations (Color/Size)
-                        </label>
-                        
-                        <div id="variations-list" class="space-y-3 mb-4"></div>
-
-                        <div class="grid grid-cols-12 gap-2 items-end bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="col-span-3">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase">Name</label>
-                                <input type="text" id="var-name-input" class="w-full p-2 border border-gray-200 rounded-lg text-xs font-bold focus:ring-1 focus:ring-tutu-pink outline-none" placeholder="Red">
+                        <div class="p-6 bg-gray-50 rounded-3xl border border-gray-100 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">Product Variations (Nested)</label>
+                                <span class="text-[9px] bg-tutu-pink/10 text-tutu-pink px-2 py-1 rounded-md font-bold">Multi-Option Support</span>
                             </div>
-                            <div class="col-span-3">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase">Price Override</label>
-                                <input type="number" id="var-price-input" class="w-full p-2 border border-gray-200 rounded-lg text-xs font-bold focus:ring-1 focus:ring-tutu-pink outline-none" placeholder="Same as Main">
-                            </div>
-                            <div class="col-span-4">
-                                <label class="text-[10px] font-bold text-gray-400 uppercase">Image</label>
-                                <div class="flex gap-1">
-                                    <input type="file" id="var-img-input" class="hidden" accept="image/*">
-                                    <button onclick="document.getElementById('var-img-input').click()" class="w-full bg-gray-100 border border-gray-200 text-gray-500 text-xs py-2 rounded-lg hover:bg-gray-200 truncate" id="var-img-btn-text">
-                                        <i class="fa fa-camera"></i> Choose
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="col-span-2">
-                                <button onclick="addManualVariation()" class="w-full bg-gray-800 text-white py-2 rounded-lg text-xs font-bold hover:bg-black transition">
-                                    <i class="fa fa-plus"></i> Add
+
+                            <div class="flex gap-2">
+                                <input type="text" id="main-var-input" class="flex-1 p-3 border border-gray-100 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-tutu-pink shadow-sm" placeholder="Variation Name (e.g. Color, Size)">
+                                <button onclick="addMainVariation()" class="bg-gray-800 text-white px-5 py-3 rounded-2xl text-[10px] font-bold hover:bg-black transition-all shadow-md active:scale-95">
+                                    + ADD GROUP
                                 </button>
                             </div>
+
+                            <div id="nested-variations-container" class="space-y-3 max-h-64 overflow-y-auto pr-2 modal-scroll">
+                                <div class="text-center py-4 border-2 border-dashed border-gray-200 rounded-2xl">
+                                    <p class="text-[10px] text-gray-400 font-medium">No variations added yet.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="flex gap-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" id="edit-custom" class="w-5 h-5 text-tutu-pink rounded border-gray-300 focus:ring-tutu-pink transition-all">
-                            <span class="text-sm font-bold text-gray-600 group-hover:text-tutu-pink transition-colors">Customization Available</span>
-                        </label>
-                        <label class="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" id="edit-active" class="w-5 h-5 text-tutu-pink rounded border-gray-300 focus:ring-tutu-pink transition-all">
-                            <span class="text-sm font-bold text-gray-600 group-hover:text-tutu-pink transition-colors">Listing Active</span>
-                        </label>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Description</label>
+                        <textarea id="edit-desc" rows="4" class="w-full p-5 bg-gray-50 border border-gray-100 rounded-3xl text-sm leading-relaxed outline-none focus:ring-2 focus:ring-tutu-pink transition-all" placeholder="Craft a compelling story..."></textarea>
+                    </div>
+
+                    <div class="hidden">
+                        <input type="checkbox" id="edit-custom">
+                        <input type="checkbox" id="edit-active">
                     </div>
                 </div>
 
-                <div class="p-6 border-t border-gray-100 bg-white flex justify-between items-center rounded-br-2xl">
-                    <button onclick="deleteProduct()" class="text-red-500 hover:text-red-700 text-sm font-bold flex items-center gap-2 border border-red-200 px-4 py-2.5 rounded-xl hover:bg-red-50 transition-all">
-                        <i class="fa fa-trash"></i> Delete
+                <div class="p-6 border-t border-gray-100 bg-white flex justify-between items-center rounded-br-3xl shadow-lg">
+                    <button onclick="deleteProduct()" class="text-red-500 font-bold text-xs flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-red-50 transition-all">
+                        <i class="fa fa-trash"></i> DELETE
                     </button>
-                    <div class="flex gap-3">
-                        <button onclick="saveChanges(false)" class="px-6 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors flex items-center gap-2">
-                            <i class="fa fa-save"></i> Save Draft
-                        </button>
-                        <button onclick="updateProductStatus('rejected')" class="px-6 py-2.5 bg-white border border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 transition-colors flex items-center gap-2">
-                            <i class="fa fa-times-circle"></i> Reject
-                        </button>
-                        <button onclick="saveChanges(true)" class="px-8 py-2.5 bg-tutu-pink text-white font-bold rounded-xl hover:bg-tutu-pink-dark shadow-lg shadow-pink-200 hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
-                            <i class="fa fa-check-circle"></i> Approve & Live
-                        </button>
+                    <div class="flex gap-2">
+                        <button onclick="saveChanges(false)" class="px-6 py-3 bg-gray-100 text-gray-600 font-bold rounded-2xl hover:bg-gray-200 transition-all text-xs">SAVE DRAFT</button>
+                        <button onclick="saveChanges(true)" class="px-8 py-3 bg-tutu-pink text-white font-black rounded-2xl shadow-xl shadow-pink-100 hover:scale-105 transition-all text-xs tracking-widest uppercase">Approve & Live</button>
                     </div>
                 </div>
             </div>
@@ -312,476 +282,403 @@
     </div>
 
     <script type="module">
-        import { renderSidebar, checkAdminAuth, db } from "./common.js";
-        import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc, addDoc, limit, startAfter, getDoc, getCountFromServer, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { renderSidebar, checkAdminAuth, db, formatLKR, showToast } from "./common.js";
+        import { 
+            collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc, 
+            addDoc, limit, startAfter, getDoc, getCountFromServer, where, 
+            serverTimestamp, getAggregateFromServer, sum 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('products');
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const publicDataPath = `/artifacts/${appId}/public/data`;
-
-        // --- GLOBAL VARIABLES ---
+        
+        // --- GLOBAL STATE ---
         let productsCache = [];
         let mainCategories = [];
         let subCategories = [];
+        let currentProductImages = [];
+        window.currentVariations = []; // NESTED VARIATIONS STORE
+        let selectedProduct = null;
+        let recognition;
         let lastVisibleDoc = null;
         let isFetching = false;
-        let hasMore = true;
-        let selectedProduct = null;
-        let currentUploadFile = null; 
-        let recognition; 
-        let currentVariations = []; 
-        let GEMINI_API_KEY = null;
-        let IMGBB_API_KEY = null;
-        const auth = getAuth();
+        
+        let IMGBB_API_KEY = "";
+        let GEMINI_API_KEY = "";
 
-        // --- AUTH & INIT ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                checkAdminAuth();
-                renderSidebar('products');
-                await loadSystemApiKeys();
-                await fetchCategories();
-                loadProducts(true);
-                refreshStats();
-            } else {
-                window.location.href = "login.html"; 
+        // --- INIT ---
+        async function init() {
+            await loadApiKeys();
+            await fetchCategories();
+            await loadProducts(true);
+            refreshStats();
+        }
+
+        async function loadApiKeys() {
+            const snap = await getDoc(doc(db, 'config', 'ai_keys'));
+            if (snap.exists()) {
+                IMGBB_API_KEY = snap.data().imgbbKey;
+                GEMINI_API_KEY = snap.data().geminiKey;
             }
-        });
-
-        async function loadSystemApiKeys() {
-            try {
-                const snap = await getDoc(doc(db, 'config', 'ai_keys'));
-                if (snap.exists()) {
-                    const data = snap.data();
-                    GEMINI_API_KEY = data.geminiKey;
-                    IMGBB_API_KEY = data.imgbbKey;
-                }
-            } catch (e) { console.error("Key Error", e); }
         }
 
-        // --- CATEGORY LOGIC (Parent/Child) ---
-        async function fetchCategories() {
-            try {
-                const q = query(collection(db, publicDataPath, 'categories'), orderBy('name', 'asc')); 
-                const snap = await getDocs(q);
-                mainCategories = [];
-                subCategories = [];
-                snap.forEach(d => {
-                    const data = d.data();
-                    const catObj = { id: d.id, name: data.name, parentId: data.parentId };
-                    if (data.parentId) subCategories.push(catObj);
-                    else mainCategories.push(catObj);
-                });
-                populateMainDropdown();
-                updateCategoryFilter();
-                document.getElementById('stat-cats').textContent = mainCategories.length + subCategories.length;
-            } catch (e) { console.error("Error categories:", e); }
-        }
+        // --- NESTED VARIATIONS LOGIC (FIXED) ---
+        window.addMainVariation = () => {
+            const input = document.getElementById('main-var-input');
+            const name = input?.value.trim();
+            if (name) {
+                window.currentVariations.push({ name: name, options: [] });
+                input.value = '';
+                renderVariations();
+            }
+        };
 
-        function populateMainDropdown(selectedId = null) {
-            const select = document.getElementById('edit-category-main');
-            select.innerHTML = '<option value="" disabled selected>Select Main...</option>';
-            mainCategories.forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat.name; 
-                opt.dataset.id = cat.id;
-                opt.textContent = cat.name;
-                select.appendChild(opt);
-            });
-            if (selectedId) select.value = selectedId;
-        }
+        window.addSubVariation = (index) => {
+            const input = document.getElementById(`sub-input-${index}`);
+            const val = input?.value.trim();
+            if (val) {
+                window.currentVariations[index].options.push(val);
+                input.value = '';
+                renderVariations();
+            }
+        };
 
-        window.loadSubCategories = (selectedSubName = null) => {
-            const mainSelect = document.getElementById('edit-category-main');
-            const subSelect = document.getElementById('edit-category-sub');
-            const selectedOption = mainSelect.options[mainSelect.selectedIndex];
-            const mainCatId = selectedOption ? selectedOption.dataset.id : null;
-            
-            subSelect.innerHTML = '<option value="" disabled selected>Select Sub Category</option>';
+        window.removeMainVariation = (index) => {
+            window.currentVariations.splice(index, 1);
+            renderVariations();
+        };
 
-            if (!mainCatId) {
-                subSelect.disabled = true;
-                subSelect.classList.add('bg-gray-50');
+        window.removeSubVariation = (mainIndex, subIndex) => {
+            window.currentVariations[mainIndex].options.splice(subIndex, 1);
+            renderVariations();
+        };
+
+        function renderVariations() {
+            const container = document.getElementById('nested-variations-container');
+            if (!container) return;
+
+            if (window.currentVariations.length === 0) {
+                container.innerHTML = `<div class="text-center py-4 border-2 border-dashed border-gray-200 rounded-2xl">
+                    <p class="text-[10px] text-gray-400 font-medium">No variations added yet.</p>
+                </div>`;
                 return;
             }
 
-            const relevantSubs = subCategories.filter(sub => sub.parentId === mainCatId);
-
-            if (relevantSubs.length > 0) {
-                subSelect.disabled = false;
-                subSelect.classList.remove('bg-gray-50', 'bg-gray-100');
-                subSelect.classList.add('bg-white');
-                relevantSubs.forEach(sub => {
-                    const opt = document.createElement('option');
-                    opt.value = sub.name;
-                    opt.textContent = sub.name;
-                    subSelect.appendChild(opt);
-                });
-                if (selectedSubName) subSelect.value = selectedSubName;
-            } else {
-                subSelect.innerHTML = '<option value="" disabled selected>No Sub Categories</option>';
-                subSelect.disabled = true;
-            }
-        };
-
-        function updateCategoryFilter() {
-            const select = document.getElementById('category-filter');
-            let html = '<option value="all">All Categories</option>';
-            mainCategories.forEach(cat => html += `<option value="${cat.name}">${cat.name}</option>`);
-            select.innerHTML = html;
-        }
-
-        // --- IMAGE UPLOAD ---
-        document.getElementById('image-upload-input').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            currentUploadFile = file;
-            if (!IMGBB_API_KEY) return Swal.fire({ icon: 'error', text: 'Missing API Key' });
-
-            const uploadStatus = document.getElementById('upload-status');
-            const imgPreview = document.getElementById('edit-img');
-            
-            uploadStatus.classList.remove('hidden');
-            imgPreview.style.opacity = '0.5';
-
-            const formData = new FormData();
-            formData.append('image', file);
-
-            try {
-                const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
-                const data = await response.json();
-                if (data.success) {
-                    const imageUrl = data.data.url;
-                    document.getElementById('edit-img-url').value = imageUrl;
-                    imgPreview.src = imageUrl;
-                    updateAuditScore();
-                }
-            } catch (error) { Swal.fire({ icon: 'error', text: error.message }); } 
-            finally {
-                uploadStatus.classList.add('hidden');
-                imgPreview.style.opacity = '1';
-            }
-        });
-
-        // --- VOICE ---
-        window.toggleVoiceRecognition = () => {
-            if (recognition && recognition.started) { stopVoiceRecognition(); return; }
-            recognition = new webkitSpeechRecognition();
-            recognition.lang = 'si-LK'; 
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.started = true;
-            recognition.onstart = () => {
-                document.getElementById('mic-btn').classList.add('mic-listening');
-                document.getElementById('mic-text').textContent = 'Listening...';
-            };
-            recognition.onresult = (e) => {
-                let txt = '';
-                for (let i = e.resultIndex; i < e.results.length; ++i) if (e.results[i].isFinal) txt += e.results[i][0].transcript + '. ';
-                if(txt) document.getElementById('voice-input').value += ' ' + txt;
-            };
-            recognition.start();
-        };
-        function stopVoiceRecognition() {
-            if(recognition) { recognition.stop(); recognition.started = false; }
-            document.getElementById('mic-btn').classList.remove('mic-listening');
-            document.getElementById('mic-text').textContent = 'Start Mic';
-        }
-
-        // --- AI AUTO FILL (With Main/Sub) ---
-        window.magicFixProductVision = async () => {
-            if (!GEMINI_API_KEY) return Swal.fire({ icon: 'error', text: 'No AI Key' });
-            const btn = document.getElementById('btn-magic-fix');
-            const originalText = btn.innerHTML;
-            const imgUrl = document.getElementById('edit-img-url').value;
-            
-            if (!currentUploadFile && !imgUrl) return Swal.fire({ icon: 'warning', text: 'Image required' });
-
-            btn.innerHTML = '<i class="fa fa-bolt fa-spin"></i> Thinking...';
-            document.getElementById('ai-status').classList.remove('hidden');
-
-            try {
-                let base64Image;
-                if (currentUploadFile) {
-                    base64Image = await new Promise(r => { const reader = new FileReader(); reader.onloadend = () => r(reader.result.split(',')[1]); reader.readAsDataURL(currentUploadFile); });
-                } else {
-                    const blob = await (await fetch(imgUrl)).blob();
-                    base64Image = await new Promise(r => { const reader = new FileReader(); reader.onloadend = () => r(reader.result.split(',')[1]); reader.readAsDataURL(blob); });
-                }
-
-                // AI Context
-                const catString = mainCategories.map(c => c.name).join(', ');
-
-                const promptText = `
-                    Analyze image & voice note: "${document.getElementById('voice-input').value}".
-                    Match "category" strictly from this Main Category list: [${catString}].
-                    Suggest a "subCategory" string (e.g. "Silk Saree", "Long Frock") based on visual appearance.
-                    Create variations if colors/types detected.
-                    JSON Schema: { 
-                        "name": "Product Name", 
-                        "description": "Short desc", 
-                        "category": "Exact Match Main", 
-                        "subCategory": "Suggested Sub",
-                        "price": 0,
-                        "variations": [{ "name": "Red", "price": 1000 }]
-                    }
-                `;
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
-                });
-                
-                const data = await response.json();
-                const rawText = data.candidates[0].content.parts[0].text;
-                const result = JSON.parse(rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1));
-
-                document.getElementById('edit-name').value = result.name || '';
-                document.getElementById('edit-desc').value = result.description || '';
-                document.getElementById('edit-price').value = result.price || 0;
-                
-                // Select Main Category & Try Sub
-                const mainSelect = document.getElementById('edit-category-main');
-                const matched = mainCategories.find(c => c.name === result.category);
-                
-                if (matched) {
-                    mainSelect.value = matched.name;
-                    loadSubCategories(); // Load subs based on ID
-                    // Try to match Sub name roughly
-                    const subSelect = document.getElementById('edit-category-sub');
-                    const subOptions = Array.from(subSelect.options).map(o => o.value);
-                    // Simple fuzzy find or exact
-                    if (result.subCategory && subOptions.includes(result.subCategory)) {
-                        subSelect.value = result.subCategory;
-                    }
-                }
-
-                if (result.variations) {
-                    currentVariations = result.variations.map(v => ({ name: v.name, price: v.price || result.price, imageUrl: imgUrl }));
-                    renderVariations();
-                }
-
-                Swal.fire({ icon: 'success', title: 'AI Magic Done!', timer: 1000 });
-
-            } catch (e) { console.error(e); Swal.fire({ icon: 'error', text: 'AI Error' }); } 
-            finally { btn.innerHTML = originalText; document.getElementById('ai-status').classList.add('hidden'); }
-        };
-
-        // --- VARIATIONS ---
-        window.renderVariations = () => {
-            document.getElementById('variations-list').innerHTML = currentVariations.map((v, i) => `
-                <div class="flex items-center justify-between bg-white p-2 border border-gray-200 rounded-lg shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <img src="${v.imageUrl || 'https://placehold.co/50'}" class="w-10 h-10 rounded-md object-cover border border-gray-100">
-                        <div><p class="text-xs font-bold">${v.name}</p><p class="text-[10px]">LKR ${v.price}</p></div>
+            container.innerHTML = window.currentVariations.map((group, i) => `
+                <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-3 mb-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-black text-tutu-pink uppercase tracking-tighter">${group.name}</span>
+                        <button onclick="removeMainVariation(${i})" class="text-red-400 hover:text-red-600 text-xs"><i class="fa fa-trash"></i></button>
                     </div>
-                    <button onclick="removeVariation(${i})" class="text-red-400 hover:text-red-600"><i class="fa fa-times-circle"></i></button>
-                </div>`).join('');
-        };
-        window.addManualVariation = async () => {
-            const name = document.getElementById('var-name-input').value;
-            if(!name) return;
-            
-            // Handle sub-image upload if present
-            let varImg = document.getElementById('edit-img-url').value;
-            const varFileIn = document.getElementById('var-img-input');
-            if(varFileIn.files[0]) {
-                 const btnText = document.getElementById('var-img-btn-text');
-                 btnText.innerHTML = '...';
-                 const formData = new FormData(); formData.append('image', varFileIn.files[0]);
-                 try {
-                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
-                    const d = await res.json();
-                    if(d.success) varImg = d.data.url;
-                 } catch(e){}
-                 btnText.innerHTML = '<i class="fa fa-camera"></i> Choose';
-                 varFileIn.value = '';
-            }
+                    <div class="flex flex-wrap gap-2">
+                        ${group.options.map((opt, j) => `
+                            <span class="bg-gray-100 text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-2 border border-gray-200">
+                                ${opt} <i class="fa fa-times cursor-pointer hover:text-red-500" onclick="removeSubVariation(${i}, ${j})"></i>
+                            </span>
+                        `).join('')}
+                    </div>
+                    <div class="flex gap-1">
+                        <input type="text" id="sub-input-${i}" class="flex-1 p-2 border rounded-xl text-[10px] outline-none focus:ring-1 focus:ring-tutu-pink" placeholder="Add option (e.g. Red)">
+                        <button onclick="addSubVariation(${i})" class="bg-tutu-pink text-white px-3 py-1 rounded-xl text-[10px] font-bold">ADD</button>
+                    </div>
+                </div>
+            `).join('');
+            updateAuditScoreUI();
+        }
 
-            currentVariations.push({ name, price: document.getElementById('var-price-input').value || document.getElementById('edit-price').value, imageUrl: varImg });
-            renderVariations();
-            document.getElementById('var-name-input').value = '';
-        };
-        window.removeVariation = (i) => { currentVariations.splice(i, 1); renderVariations(); };
-
-        // --- CRUD ---
+        // --- PRODUCT LOADING ---
         async function loadProducts(reset = false) {
-            if (isFetching || (!hasMore && !reset)) return;
+            if (isFetching) return;
             isFetching = true;
-            document.getElementById('scroll-loader').classList.remove('hidden');
-            if (reset) { productsCache = []; lastVisibleDoc = null; hasMore = true; document.getElementById('products-table-body').innerHTML = ''; }
+            const tbody = document.getElementById('products-table-body');
+            const loader = document.getElementById('scroll-loader');
+            if(reset) { tbody.innerHTML = ''; productsCache = []; lastVisibleDoc = null; }
+            loader?.classList.remove('hidden');
 
-            let q = query(collection(db, publicDataPath, 'products'), orderBy('createdAt', 'desc'), limit(20));
-            if (lastVisibleDoc) q = query(collection(db, publicDataPath, 'products'), orderBy('createdAt', 'desc'), startAfter(lastVisibleDoc), limit(20));
+            try {
+                let constraints = [orderBy('createdAt', 'desc'), limit(20)];
+                const catFilter = document.getElementById('category-filter').value;
+                const statFilter = document.getElementById('status-filter').value;
+                
+                if (catFilter !== 'all') constraints.unshift(where('category', '==', catFilter));
+                if (statFilter !== 'all') {
+                    if (statFilter === 'pending') constraints.unshift(where('isApproved', '==', null));
+                    else constraints.unshift(where('isApproved', '==', statFilter === 'approved'));
+                }
+                if (lastVisibleDoc && !reset) constraints.push(startAfter(lastVisibleDoc));
 
-            const snap = await getDocs(q);
-            if (snap.empty) { hasMore = false; document.getElementById('end-of-list').classList.remove('hidden'); }
-            else {
-                lastVisibleDoc = snap.docs[snap.docs.length - 1];
-                productsCache = [...productsCache, ...snap.docs.map(d => ({ id: d.id, ...d.data() }))];
-                renderTable(productsCache);
-            }
-            isFetching = false; document.getElementById('scroll-loader').classList.add('hidden');
+                const q = query(collection(db, publicDataPath, 'products'), ...constraints);
+                const snap = await getDocs(q);
+
+                if (snap.empty && reset) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-20 text-center text-gray-400">No products found.</td></tr>';
+                } else {
+                    lastVisibleDoc = snap.docs[snap.docs.length - 1];
+                    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    productsCache = [...productsCache, ...items];
+                    renderRows(items);
+                }
+            } catch (e) { console.error(e); } finally { isFetching = false; loader?.classList.add('hidden'); }
         }
 
-        function renderTable(products) {
-            const catFilter = document.getElementById('category-filter').value;
-            const statusFilter = document.getElementById('status-filter').value;
-            
-            const filtered = products.filter(p => {
-                const sMatch = statusFilter === 'all' || (statusFilter === 'pending' && p.isApproved == null) || (statusFilter === 'approved' && p.isApproved) || (statusFilter === 'rejected' && p.isApproved === false);
-                const cMatch = catFilter === 'all' || p.category === catFilter;
-                return sMatch && cMatch;
+        function renderRows(items) {
+            const tbody = document.getElementById('products-table-body');
+            items.forEach(p => {
+                const img = p.images?.[0] || p.imageUrl || 'https://placehold.co/100';
+                const score = calculateAuditScore(p);
+                const status = p.isApproved === true ? 'Live' : (p.isApproved === false ? 'Rejected' : 'Pending');
+                const row = `<tr class="hover:bg-pink-50/10 transition group">
+                        <td class="p-5 flex items-center gap-4">
+                            <img src="${img}" class="w-12 h-12 rounded-xl object-cover border shadow-sm">
+                            <div class="overflow-hidden">
+                                <p class="font-bold text-gray-800 truncate w-48">${p.name || 'Unnamed'}</p>
+                                <p class="text-[10px] font-mono text-gray-400 mt-0.5">LKR ${p.price?.toLocaleString() || 0}</p>
+                            </div>
+                        </td>
+                        <td class="p-5">
+                            <p class="text-[10px] font-black text-gray-700 uppercase tracking-tighter">${p.category || 'N/A'}</p>
+                            <p class="text-[9px] text-gray-400 font-bold">${p.subCategory || '-'}</p>
+                        </td>
+                        <td class="p-5 flex justify-center">
+                            <div class="score-circle ${score >= 80 ? 'score-high' : (score < 50 ? 'score-low' : 'score-mid')}">${score}</div>
+                        </td>
+                        <td class="p-5 text-center">
+                            <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${status === 'Live' ? 'bg-green-100 text-green-700' : (status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700')}">${status}</span>
+                        </td>
+                        <td class="p-5 text-center">
+                            <button onclick="openEditModal('${p.id}')" class="bg-white border-2 border-gray-100 text-tutu-pink font-black text-[10px] px-4 py-2 rounded-xl hover:bg-pink-50 transition-all uppercase">Manage</button>
+                        </td>
+                    </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
             });
-
-            document.getElementById('products-table-body').innerHTML = filtered.map(p => {
-                const { score } = calculateScore(p);
-                let scoreClass = score >= 80 ? 'score-high' : score < 50 ? 'score-low' : 'score-mid';
-                let statusBadge = p.isApproved === true ? '<span class="bg-green-50 text-green-700 px-2 rounded-full text-xs font-bold border border-green-200">Active</span>' : 
-                                  p.isApproved === false ? '<span class="bg-red-50 text-red-700 px-2 rounded-full text-xs font-bold border border-red-200">Rejected</span>' : 
-                                  '<span class="bg-yellow-50 text-yellow-700 px-2 rounded-full text-xs font-bold border border-yellow-200">Pending</span>';
-
-                return `
-                <tr class="border-b border-gray-50 hover:bg-pink-50/20 transition group">
-                    <td class="p-4 flex items-center gap-4">
-                        <img src="${p.imageUrl || 'https://placehold.co/50'}" class="w-14 h-14 rounded-xl object-cover border border-gray-100 bg-gray-50">
-                        <div><p class="font-bold text-gray-800 text-sm line-clamp-1">${p.name}</p><p class="text-xs text-tutu-pink font-medium mt-0.5">${p.storeName || 'Unknown Store'}</p></div>
-                    </td>
-                    <td class="p-4">
-                        <p class="text-xs font-bold text-gray-700 uppercase">${p.category || '-'}</p>
-                        <p class="text-[10px] text-gray-400">${p.subCategory || ''}</p>
-                    </td>
-                    <td class="p-4"><div class="flex justify-center"><div class="score-circle ${scoreClass}">${score}</div></div></td>
-                    <td class="p-4 text-center">${statusBadge}</td>
-                    <td class="p-4 text-center"><button onclick="openEditModal('${p.id}')" class="bg-white border text-gray-600 hover:text-tutu-pink hover:border-tutu-pink px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex gap-2 mx-auto"><i class="fa fa-pencil-alt"></i> Edit</button></td>
-                </tr>`;
-            }).join('');
         }
 
-        function calculateScore(p) { 
-            let score = 100; let audit = [];
-            if (!p.imageUrl) { score -= 40; audit.push({ text: "Missing Image", pass: false }); } else { audit.push({ text: "Image Present", pass: true }); }
-            if (!p.name) { score -= 10; audit.push({ text: "Missing Name", pass: false }); }
-            if (!p.price || p.price <= 0) { score -= 20; audit.push({ text: "Bad Price", pass: false }); }
-            return { score, audit };
-        }
-        
-        function updateAuditScore(p) {
-            const data = p || { imageUrl: document.getElementById('edit-img-url').value, name: document.getElementById('edit-name').value, price: document.getElementById('edit-price').value };
-            const { score, audit } = calculateScore(data);
-            document.getElementById('modal-score-val').textContent = score + '/100';
-            document.getElementById('modal-score-bar').style.width = score + '%';
-            document.getElementById('modal-score-bar').className = `h-2 rounded-full transition-all duration-1000 ${score >= 80 ? 'bg-green-500' : (score < 50 ? 'bg-red-500' : 'bg-yellow-500')}`;
-            document.getElementById('modal-audit-list').innerHTML = audit.map(i => `<div class="flex items-center text-xs text-gray-300"><i class="fa ${i.pass ? 'fa-check text-green-500' : 'fa-times text-red-500'} w-5"></i>${i.text}</div>`).join('');
-        }
+        // --- EDIT MODAL (FIXED BUG) ---
+        window.openEditModal = async (id) => {
+            try {
+                showToast('Loading product details...', 'info');
+                const snap = await getDoc(doc(db, publicDataPath, 'products', id));
+                if (!snap.exists()) return showToast('Product not found!', 'error');
+                
+                selectedProduct = { id: snap.id, ...snap.data() };
+                
+                document.getElementById('modal-id').innerText = id;
+                document.getElementById('edit-name').value = selectedProduct.name || '';
+                document.getElementById('edit-price').value = selectedProduct.price || 0;
+                document.getElementById('edit-resell-price').value = selectedProduct.resellPrice || 0;
+                document.getElementById('edit-orig-price').value = selectedProduct.originalPrice || 0;
+                document.getElementById('edit-min-price').value = selectedProduct.minPrice || 0;
+                document.getElementById('edit-desc').value = selectedProduct.description || '';
+                document.getElementById('edit-weight').value = selectedProduct.weight || 0;
+                document.getElementById('edit-delivery-price').value = selectedProduct.deliveryPrice || 0;
+                
+                document.getElementById('edit-category-main').value = selectedProduct.category || '';
+                loadSubCategories(selectedProduct.subCategory);
 
-        window.saveChanges = async (approve) => {
+                currentProductImages = selectedProduct.images || (selectedProduct.imageUrl ? [selectedProduct.imageUrl] : []);
+                window.currentVariations = Array.isArray(selectedProduct.variations) ? selectedProduct.variations : [];
+                
+                renderGallery();
+                renderVariations();
+                updateAuditScoreUI();
+                
+                document.getElementById('edit-modal').classList.remove('hidden');
+            } catch (e) { console.error(e); showToast('Error loading product', 'error'); }
+        };
+
+        window.openCreateModal = () => {
+            selectedProduct = null;
+            document.getElementById('modal-id').innerText = 'NEW_ITEM';
+            document.getElementById('edit-name').value = '';
+            document.getElementById('edit-price').value = '';
+            document.getElementById('edit-desc').value = '';
+            document.getElementById('voice-input').value = '';
+            currentProductImages = [];
+            window.currentVariations = [];
+            document.getElementById('edit-img-main').src = 'https://placehold.co/500?text=Upload+Images';
+            renderGallery();
+            renderVariations();
+            updateAuditScoreUI();
+            document.getElementById('edit-modal').classList.remove('hidden');
+        };
+
+        // --- SAVE CHANGES ---
+        window.saveChanges = async (isLive) => {
             const data = {
                 name: document.getElementById('edit-name').value,
-                category: document.getElementById('edit-category-main').value, 
-                subCategory: document.getElementById('edit-category-sub').value || null,
+                category: document.getElementById('edit-category-main').value,
+                subCategory: document.getElementById('edit-category-sub').value,
                 price: Number(document.getElementById('edit-price').value),
-                originalPrice: Number(document.getElementById('edit-orig-price').value) || null,
-                minPrice: Number(document.getElementById('edit-min-price').value) || null,
+                resellPrice: Number(document.getElementById('edit-resell-price').value) || 0,
+                originalPrice: Number(document.getElementById('edit-orig-price').value) || 0,
+                minPrice: Number(document.getElementById('edit-min-price').value) || 0,
                 weight: Number(document.getElementById('edit-weight').value) || 0,
                 deliveryPrice: Number(document.getElementById('edit-delivery-price').value) || 0,
                 description: document.getElementById('edit-desc').value,
-                imageUrl: document.getElementById('edit-img-url').value,
-                variations: currentVariations,
-                customizationAvailable: document.getElementById('edit-custom').checked,
-                isApproved: approve ? true : document.getElementById('edit-active').checked,
-                storeName: selectedProduct ? selectedProduct.storeName : 'TUTU Store',
-                sellerUid: selectedProduct ? selectedProduct.sellerUid : auth.currentUser.uid
+                images: currentProductImages,
+                variations: window.currentVariations,
+                isApproved: isLive ? true : (selectedProduct ? selectedProduct.isApproved : null),
+                updatedAt: serverTimestamp()
             };
 
-            if(selectedProduct) await updateDoc(doc(db, publicDataPath, 'products', selectedProduct.id), data);
-            else await addDoc(collection(db, publicDataPath, 'products'), { ...data, createdAt: serverTimestamp() });
+            if (!data.name || !data.price) return showToast('Name & Price Required', 'warning');
 
-            window.closeModal();
-            resetAndReload();
-            Swal.fire({ icon: 'success', title: 'Saved' });
+            try {
+                if (selectedProduct) {
+                    await updateDoc(doc(db, publicDataPath, 'products', selectedProduct.id), data);
+                } else {
+                    await addDoc(collection(db, publicDataPath, 'products'), { ...data, createdAt: serverTimestamp() });
+                }
+                showToast('Product Saved!', 'success');
+                window.closeModal();
+                loadProducts(true);
+                refreshStats();
+            } catch (err) { console.error(err); showToast('Save Failed', 'error'); }
         };
+
+        // --- HELPERS (AI, Gallery, Voice, Categories) ---
+        async function fetchCategories() {
+            const snap = await getDocs(collection(db, publicDataPath, 'categories'));
+            const all = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            mainCategories = all.filter(c => !c.parentId);
+            subCategories = all.filter(c => c.parentId);
+            document.getElementById('category-filter').innerHTML = '<option value="all">All Categories</option>' + mainCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            document.getElementById('edit-category-main').innerHTML = '<option value="" disabled selected>Main Category</option>' + mainCategories.map(c => `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`).join('');
+        }
+
+        window.loadSubCategories = (currentSub = null) => {
+            const mainSel = document.getElementById('edit-category-main');
+            const subSel = document.getElementById('edit-category-sub');
+            const mainId = mainSel.options[mainSel.selectedIndex]?.dataset.id;
+            subSel.innerHTML = '<option value="" disabled selected>Sub Category</option>';
+            if(!mainId) { subSel.disabled = true; return; }
+            const filtered = subCategories.filter(s => s.parentId === mainId);
+            subSel.disabled = filtered.length === 0;
+            subSel.innerHTML += filtered.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+            if(currentSub) subSel.value = currentSub;
+        };
+
+        document.getElementById('image-upload-input').addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (!IMGBB_API_KEY || files.length === 0) return;
+            showToast('Uploading...', 'info');
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('image', file);
+                try {
+                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (data.success) { currentProductImages.push(data.data.url); renderGallery(); }
+                } catch (err) { console.error(err); }
+            }
+        });
+
+        function renderGallery() {
+            const container = document.getElementById('image-gallery-container');
+            const mainImg = document.getElementById('edit-img-main');
+            container.innerHTML = currentProductImages.map((url, i) => `
+                <div class="relative group img-grid-item aspect-square rounded-xl overflow-hidden ${mainImg.src === url ? 'active' : ''}">
+                    <img src="${url}" class="w-full h-full object-cover" onclick="setMainImg('${url}')">
+                    <button onclick="removeImg(${i})" class="absolute top-1 right-1 bg-red-600 text-white w-5 h-5 rounded-lg text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                </div>`).join('');
+            if(currentProductImages.length > 0 && mainImg.src.includes('placehold')) mainImg.src = currentProductImages[0];
+        }
+
+        window.setMainImg = (url) => { document.getElementById('edit-img-main').src = url; renderGallery(); };
+        window.removeImg = (i) => { currentProductImages.splice(i, 1); renderGallery(); updateAuditScoreUI(); };
+
+        window.magicFixProductVision = async () => {
+            if (!GEMINI_API_KEY || currentProductImages.length === 0) return showToast('Upload an image first!', 'warning');
+            const btn = document.getElementById('btn-magic-fix');
+            btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Analyzing...';
+            try {
+                const blob = await fetch(currentProductImages[0]).then(r => r.blob());
+                const base64 = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result.split(',')[1]); rd.readAsDataURL(blob); });
+                const prompt = `Analyze product image and notes: "${document.getElementById('voice-input').value}". Return JSON only: {"name": "...", "price": 0, "desc": "...", "category": "..."}`;
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }] })
+                });
+                const data = await res.json();
+                const json = JSON.parse(data.candidates[0].content.parts[0].text.match(/\{.*\}/s)[0]);
+                document.getElementById('edit-name').value = json.name;
+                document.getElementById('edit-price').value = json.price;
+                document.getElementById('edit-desc').value = json.desc;
+                showToast('AI Auto-fill Done!', 'success');
+                updateAuditScoreUI();
+            } catch (e) { showToast('AI Error', 'error'); } finally { btn.disabled = false; btn.innerHTML = '<i class="fa fa-wand-magic-sparkles"></i> AI AUTO-FILL'; }
+        };
+
+        function calculateAuditScore(p) {
+            let score = 100;
+            if (!p.images || p.images.length === 0) score -= 40;
+            if (!p.name || p.name.length < 10) score -= 20;
+            if (!p.description || p.description.length < 30) score -= 20;
+            if (!p.price || p.price <= 0) score -= 20;
+            return Math.max(0, score);
+        }
+
+        function updateAuditScoreUI() {
+            const score = calculateAuditScore({
+                name: document.getElementById('edit-name').value,
+                description: document.getElementById('edit-desc').value,
+                price: Number(document.getElementById('edit-price').value),
+                images: currentProductImages
+            });
+            document.getElementById('modal-score-val').innerText = `${score}/100`;
+            document.getElementById('modal-score-bar').style.width = `${score}%`;
+        }
+
+        window.deleteProduct = async () => {
+            if (!selectedProduct || !confirm("Erase this product forever?")) return;
+            await deleteDoc(doc(db, publicDataPath, 'products', selectedProduct.id));
+            window.closeModal();
+            loadProducts(true);
+            refreshStats();
+        };
+
+        window.toggleVoiceRecognition = () => {
+            if (recognition && recognition.active) { recognition.stop(); return; }
+            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new Speech();
+            recognition.lang = 'si-LK';
+            recognition.continuous = true;
+            recognition.onstart = () => { 
+                document.getElementById('mic-btn').classList.add('mic-listening');
+                document.getElementById('mic-text').innerText = 'LISTENING...';
+            };
+            recognition.onresult = (e) => { document.getElementById('voice-input').value += ' ' + e.results[e.results.length-1][0].transcript; };
+            recognition.onend = () => {
+                document.getElementById('mic-btn').classList.remove('mic-listening');
+                document.getElementById('mic-text').innerText = 'Start Recording';
+            };
+            recognition.start();
+        };
+
+        async function refreshStats() {
+            const coll = collection(db, publicDataPath, 'products');
+            const [p, l, r] = await Promise.all([
+                getCountFromServer(query(coll, where("isApproved", "==", null))),
+                getCountFromServer(query(coll, where("isApproved", "==", true))),
+                getCountFromServer(query(coll, where("isApproved", "==", false)))
+            ]);
+            document.getElementById('stat-pending').innerText = p.data().count;
+            document.getElementById('stat-live').innerText = l.data().count;
+            document.getElementById('stat-rejected').innerText = r.data().count;
+        }
 
         window.calculateDelivery = () => {
             const w = parseFloat(document.getElementById('edit-weight').value) || 0;
-            document.getElementById('edit-delivery-price').value = w <= 0 ? '' : (350 + (w > 1 ? Math.ceil(w - 1) * 100 : 0));
+            const cost = w <= 0.5 ? 350 : (350 + Math.ceil((w - 0.5) * 2) * 100);
+            document.getElementById('edit-delivery-price').value = cost;
         };
 
-        window.filterProducts = () => renderTable(productsCache);
-        window.openCreateModal = () => { selectedProduct = null; document.getElementById('edit-modal').classList.remove('hidden'); resetModal(); };
-        
-        window.openEditModal = (id) => { 
-            selectedProduct = productsCache.find(p => p.id === id); 
-            document.getElementById('edit-modal').classList.remove('hidden'); 
-            populateModal(selectedProduct); 
-        };
-        
-        window.closeModal = () => { document.getElementById('edit-modal').classList.add('hidden'); stopVoiceRecognition(); };
-        window.resetAndReload = () => { loadProducts(true); fetchCategories(); };
-        
-        window.updateProductStatus = async (status) => {
-            if(!selectedProduct) return;
-            await updateDoc(doc(db, publicDataPath, 'products', selectedProduct.id), { isApproved: status === 'approved' ? true : false });
-            closeModal(); resetAndReload();
-        };
+        window.closeModal = () => document.getElementById('edit-modal').classList.add('hidden');
 
-        window.deleteProduct = async () => {
-            if(!selectedProduct || !confirm("Delete?")) return;
-            await deleteDoc(doc(db, publicDataPath, 'products', selectedProduct.id));
-            closeModal(); resetAndReload();
-        };
-
-        function resetModal() {
-            document.getElementById('modal-id').textContent = 'NEW';
-            ['edit-name', 'edit-price', 'edit-desc', 'edit-weight', 'edit-delivery-price', 'edit-img-url', 'voice-input', 'edit-orig-price', 'edit-min-price'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('edit-img').src = 'https://placehold.co/400?text=Click+to+Upload';
-            
-            document.getElementById('edit-category-main').value = "";
-            document.getElementById('edit-category-sub').innerHTML = '<option value="" disabled selected>Select Main First</option>';
-            document.getElementById('edit-category-sub').disabled = true;
-
-            currentVariations = []; renderVariations();
-            updateAuditScore();
-        }
-
-        function populateModal(p) {
-            document.getElementById('modal-id').textContent = p.id;
-            document.getElementById('edit-name').value = p.name;
-            document.getElementById('edit-price').value = p.price;
-            document.getElementById('edit-orig-price').value = p.originalPrice;
-            document.getElementById('edit-min-price').value = p.minPrice;
-            document.getElementById('edit-desc').value = p.description;
-            
-            // Populate Categories
-            document.getElementById('edit-category-main').value = p.category;
-            loadSubCategories(); 
-            if(p.subCategory) document.getElementById('edit-category-sub').value = p.subCategory;
-
-            document.getElementById('edit-weight').value = p.weight || '';
-            document.getElementById('edit-delivery-price').value = p.deliveryPrice || '';
-            document.getElementById('edit-img-url').value = p.imageUrl;
-            document.getElementById('edit-img').src = p.imageUrl;
-            document.getElementById('edit-active').checked = p.isApproved === true;
-            document.getElementById('edit-custom').checked = p.customizationAvailable;
-            currentVariations = p.variations || []; renderVariations();
-            updateAuditScore(p);
-        }
-        
-        window.refreshStats = async () => {
-             const coll = collection(db, publicDataPath, 'products');
-             const pSnap = await getCountFromServer(query(coll, where("isApproved", "==", null)));
-             const lSnap = await getCountFromServer(query(coll, where("isApproved", "==", true)));
-             const rSnap = await getCountFromServer(query(coll, where("isApproved", "==", false)));
-             document.getElementById('stat-pending').textContent = pSnap.data().count;
-             document.getElementById('stat-live').textContent = lSnap.data().count;
-             document.getElementById('stat-rejected').textContent = rSnap.data().count;
-        };
-
-        // Expose Functions
-        window.renderVariations = renderVariations;
-        window.addManualVariation = addManualVariation;
-        window.removeVariation = removeVariation;
+        init();
     </script>
 </body>
 </html>
