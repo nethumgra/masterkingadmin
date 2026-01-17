@@ -305,12 +305,13 @@
         let GEMINI_API_KEY = "";
 
         // --- INIT ---
-        async function init() {
-            await loadApiKeys();
-            await fetchCategories();
-            await loadProducts(true);
-            refreshStats();
-        }
+      async function init() {
+    await loadApiKeys();
+    await fetchCategories();
+    await loadProducts(true);
+    refreshStats();
+    setupInfiniteScroll(); // <--- Me line eka add karanna
+}
 
         async function loadApiKeys() {
             const snap = await getDoc(doc(db, 'config', 'ai_keys'));
@@ -390,40 +391,72 @@
             updateAuditScoreUI();
         }
 
-        // --- PRODUCT LOADING ---
-        async function loadProducts(reset = false) {
-            if (isFetching) return;
-            isFetching = true;
-            const tbody = document.getElementById('products-table-body');
-            const loader = document.getElementById('scroll-loader');
-            if(reset) { tbody.innerHTML = ''; productsCache = []; lastVisibleDoc = null; }
-            loader?.classList.remove('hidden');
+      // --- UPDATED PRODUCT LOADING FOR INFINITE SCROLL ---
+async function loadProducts(reset = false) {
+    if (isFetching) return;
+    isFetching = true;
 
-            try {
-                let constraints = [orderBy('createdAt', 'desc'), limit(20)];
-                const catFilter = document.getElementById('category-filter').value;
-                const statFilter = document.getElementById('status-filter').value;
-                
-                if (catFilter !== 'all') constraints.unshift(where('category', '==', catFilter));
-                if (statFilter !== 'all') {
-                    if (statFilter === 'pending') constraints.unshift(where('isApproved', '==', null));
-                    else constraints.unshift(where('isApproved', '==', statFilter === 'approved'));
-                }
-                if (lastVisibleDoc && !reset) constraints.push(startAfter(lastVisibleDoc));
+    const tbody = document.getElementById('products-table-body');
+    const loader = document.getElementById('scroll-loader');
 
-                const q = query(collection(db, publicDataPath, 'products'), ...constraints);
-                const snap = await getDocs(q);
+    // Reset wenna oni nam table eka clear karala pagination pointer eka null karanawa
+    if (reset) {
+        tbody.innerHTML = '';
+        productsCache = [];
+        lastVisibleDoc = null;
+        loader?.classList.remove('hidden'); // Reset ekedi loader eka pennanna
+    }
 
-                if (snap.empty && reset) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="p-20 text-center text-gray-400">No products found.</td></tr>';
-                } else {
-                    lastVisibleDoc = snap.docs[snap.docs.length - 1];
-                    const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    productsCache = [...productsCache, ...items];
-                    renderRows(items);
-                }
-            } catch (e) { console.error(e); } finally { isFetching = false; loader?.classList.add('hidden'); }
+    try {
+        let constraints = [orderBy('createdAt', 'desc'), limit(20)];
+        const catFilter = document.getElementById('category-filter').value;
+        const statFilter = document.getElementById('status-filter').value;
+
+        // Filters apply kirima
+        if (catFilter !== 'all') constraints.unshift(where('category', '==', catFilter));
+        if (statFilter !== 'all') {
+            if (statFilter === 'pending') constraints.unshift(where('isApproved', '==', null));
+            else constraints.unshift(where('isApproved', '==', statFilter === 'approved'));
         }
+
+        // Pagination: Anthimata hambuna document eken passe ewa ganna
+        if (lastVisibleDoc && !reset) {
+            constraints.push(startAfter(lastVisibleDoc));
+        }
+
+        const q = query(collection(db, publicDataPath, 'products'), ...constraints);
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            if (reset) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-20 text-center text-gray-400">No products found.</td></tr>';
+            }
+            // Thawa items nethnam loader eka hide karanawa
+            loader?.classList.add('hidden');
+            lastVisibleDoc = null; 
+        } else {
+            // Anthima document eka mathaka thiyanawa thawa load karanna
+            lastVisibleDoc = snap.docs[snap.docs.length - 1];
+            const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            productsCache = [...productsCache, ...items];
+            
+            renderRows(items);
+
+            // Fetch una items gana limit ekata (20) wada adu nam kiyanne thawa items na kiyana eka
+            if (snap.docs.length < 20) {
+                loader?.classList.add('hidden');
+                lastVisibleDoc = null; // Infinite scroll eka trigger wena eka meken nawathinawa
+            } else {
+                loader?.classList.remove('hidden');
+            }
+        }
+    } catch (e) { 
+        console.error("Fetch Error:", e); 
+        showToast('Error loading products', 'error');
+    } finally { 
+        isFetching = false; 
+    }
+}
 
         function renderRows(items) {
             const tbody = document.getElementById('products-table-body');
@@ -676,6 +709,18 @@
 
         window.closeModal = () => document.getElementById('edit-modal').classList.add('hidden');
 
+        const setupInfiniteScroll = () => {
+    const loader = document.getElementById('scroll-loader');
+    if (!loader) return;
+
+    const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !isFetching && lastVisibleDoc) {
+            loadProducts(false); // Thawa items load karanna
+        }
+    }, { threshold: 0.5 });
+
+    observer.observe(loader);
+};
         init();
     </script>
 </body>
