@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reseller Orders - Mudalali Mama Admin</title>
+    <title>Reseller Orders - Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -44,22 +44,22 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
                 <p class="text-gray-400 text-xs font-bold uppercase">Total Reseller Orders</p>
-                <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-count">...</h2>
+                <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-count">0</h2>
             </div>
             <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-blue-500">
-                <p class="text-gray-400 text-xs font-bold uppercase">Total Sales Volume</p>
-                <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-volume">...</h2>
+                <p class="text-gray-400 text-xs font-bold uppercase">Total Revenue (Cust. Pay)</p>
+                <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-volume">Rs. 0</h2>
             </div>
             <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-mudalali-green">
-                <p class="text-gray-400 text-xs font-bold uppercase">Total Admin Profit (5%)</p>
-                <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-profit">...</h2>
+                <p class="text-gray-400 text-xs font-bold uppercase">Wholesale Subtotal</p>
+                <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-profit">Rs. 0</h2>
             </div>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 min-h-[500px]">
              <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
                  <h3 class="font-bold text-gray-700 text-sm"><i class="fa fa-boxes-packing mr-2"></i>Order List</h3>
-                 <input type="text" id="order-search" class="w-64 py-1.5 pl-4 pr-4 text-xs bg-white border rounded-full focus:outline-none focus:border-purple-500" placeholder="Search ID or Store Name...">
+                 <input type="text" id="order-search" class="w-64 py-1.5 pl-4 pr-4 text-xs bg-white border rounded-full focus:outline-none focus:border-purple-500" placeholder="Search ID or Customer...">
              </div>
 
             <div class="overflow-x-auto">
@@ -67,15 +67,14 @@
                     <thead class="bg-purple-50 text-purple-900 uppercase text-xs font-bold border-b sticky top-0 z-10">
                         <tr>
                             <th class="p-4">Order ID / Date</th>
-                            <th class="p-4">Reseller Info</th>
-                            <th class="p-4">Customer Info</th>
-                            <th class="p-4 text-right">Amount</th>
+                            <th class="p-4">Items / Variations</th>
+                            <th class="p-4">Reseller & Customer</th>
+                            <th class="p-4 text-right">Amount (LKR)</th>
                             <th class="p-4 text-center">Status</th>
                             <th class="p-4 text-center">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="orders-table-body" class="divide-y divide-gray-100">
-                        </tbody>
+                    <tbody id="orders-table-body" class="divide-y divide-gray-100"></tbody>
                 </table>
             </div>
             
@@ -88,10 +87,8 @@
                     <i class="fa fa-box-open text-gray-400 text-2xl"></i>
                 </div>
                 <p class="text-gray-500 font-bold">No Reseller Orders Found</p>
-                <p class="text-xs text-gray-400">Orders placed by resellers will appear here.</p>
             </div>
         </div>
-
     </main>
 
     <div id="order-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm">
@@ -100,171 +97,247 @@
                 <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa fa-file-invoice"></i> Reseller Order Details</h3>
                 <button onclick="document.getElementById('order-modal').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
             </div>
-            <div class="p-6 max-h-[70vh] overflow-y-auto" id="modal-content">
-                </div>
+            <div class="p-6 max-h-[75vh] overflow-y-auto" id="modal-content"></div>
         </div>
     </div>
+
 <script type="module">
-        import { renderSidebar, checkAdminAuth, db, formatLKR, showToast } from "./common.js";
-        import { collection, getDocs, query, orderBy, limit, startAfter, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { renderSidebar, checkAdminAuth, db, formatLKR, showToast } from "./common.js";
+    import { collection, getDocs, query, orderBy, limit, startAfter, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        checkAdminAuth();
-        renderSidebar('reseller_orders'); 
+    checkAdminAuth();
+    renderSidebar('reseller_orders'); 
 
-        let lastVisibleDoc = null;
-        let isFetching = false;
-        let hasMore = true;
-        const BATCH_SIZE = 20;
-        const userCache = new Map(); 
+    let lastVisibleDoc = null;
+    let isFetching = false;
+    let hasMore = true;
+    const BATCH_SIZE = 20;
+    const userCache = new Map(); 
 
-        window.loadResellerOrders = async (reset = false) => {
-            if (isFetching || (!hasMore && !reset)) return;
-            isFetching = true;
-            
-            const loader = document.getElementById('scroll-loader');
-            const tbody = document.getElementById('orders-table-body');
-            const emptyState = document.getElementById('empty-state');
+    window.loadResellerOrders = async (reset = false) => {
+        if (isFetching || (!hasMore && !reset)) return;
+        isFetching = true;
+        
+        const loader = document.getElementById('scroll-loader');
+        const tbody = document.getElementById('orders-table-body');
+        const emptyState = document.getElementById('empty-state');
 
-            if (reset) {
-                if(tbody) tbody.innerHTML = '';
-                lastVisibleDoc = null;
-                hasMore = true;
-                if(emptyState) emptyState.classList.add('hidden');
-                if(loader) loader.classList.remove('hidden');
-                updateStats(); 
+        if (reset) {
+            if(tbody) tbody.innerHTML = '';
+            lastVisibleDoc = null;
+            hasMore = true;
+            if(emptyState) emptyState.classList.add('hidden');
+            updateStats(); 
+        }
+        if(loader) loader.classList.remove('hidden');
+
+        try {
+            let q = query(collection(db, 'reseller_orders'), orderBy('createdAt', 'desc'), limit(BATCH_SIZE));
+            if (lastVisibleDoc && !reset) q = query(collection(db, 'reseller_orders'), orderBy('createdAt', 'desc'), startAfter(lastVisibleDoc), limit(BATCH_SIZE));
+
+            const snap = await getDocs(q);
+
+            if (snap.empty) {
+                hasMore = false;
+                if(tbody && tbody.children.length === 0 && emptyState) emptyState.classList.remove('hidden');
             } else {
-                if(loader) loader.classList.remove('hidden');
-            }
-
-            try {
-                let q = query(collection(db, 'reseller_orders'), orderBy('createdAt', 'desc'), limit(BATCH_SIZE));
-                if (lastVisibleDoc && !reset) q = query(collection(db, 'reseller_orders'), orderBy('createdAt', 'desc'), startAfter(lastVisibleDoc), limit(BATCH_SIZE));
-
-                const snap = await getDocs(q);
-
-                if (snap.empty) {
-                    hasMore = false;
-                    if(tbody && tbody.children.length === 0 && emptyState) emptyState.classList.remove('hidden');
-                } else {
-                    lastVisibleDoc = snap.docs[snap.docs.length - 1];
-                    for (const orderDoc of snap.docs) {
-                        const order = { id: orderDoc.id, ...orderDoc.data() };
-                        await renderResellerRow(order, tbody);
-                    }
+                lastVisibleDoc = snap.docs[snap.docs.length - 1];
+                for (const orderDoc of snap.docs) {
+                    const order = { id: orderDoc.id, ...orderDoc.data() };
+                    await renderResellerRow(order, tbody);
                 }
-            } catch (e) {
-                console.error("Error loading reseller orders:", e);
-            } finally {
-                isFetching = false;
-                if(loader) loader.classList.add('hidden');
             }
-        };
-
-        async function getResellerInfo(uid) {
-            if (!uid) return { name: "Unknown", email: "-" };
-            if (userCache.has(uid)) return userCache.get(uid);
-            try {
-                const userSnap = await getDoc(doc(db, 'users', uid));
-                let info = { name: "Unknown", email: "-" };
-                if (userSnap.exists()) {
-                    const data = userSnap.data();
-                    info = { name: data.name || data.email, email: data.email };
-                }
-                userCache.set(uid, info);
-                return info;
-            } catch (e) { return { name: "Error", email: "-" }; }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            isFetching = false;
+            if(loader) loader.classList.add('hidden');
         }
+    };
 
-        async function renderResellerRow(order, tbody) {
-            if(!tbody) return;
-            const resellerInfo = await getResellerInfo(order.resellerId);
-            const statusColors = {
-                'Pending': 'bg-yellow-100 text-yellow-700',
-                'Shipped': 'bg-indigo-100 text-indigo-700',
-                'Delivered': 'bg-green-100 text-green-700',
-                'Cancelled': 'bg-red-100 text-red-700'
-            };
+    async function getResellerInfo(uid) {
+        if (!uid) return { name: "Unknown", email: "-" };
+        if (userCache.has(uid)) return userCache.get(uid);
+        try {
+            const userSnap = await getDoc(doc(db, 'users', uid));
+            let info = { name: "Unknown", email: "-" };
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+                info = { name: data.name || data.email, email: data.email };
+            }
+            userCache.set(uid, info);
+            return info;
+        } catch (e) { return { name: "Error", email: "-" }; }
+    }
 
-            const totalAmount = order.financials?.total || 0;
-            const adminProfit = order.financials?.platformFee || (totalAmount * 0.05); 
-            const date = order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
+async function renderResellerRow(order, tbody) {
+    if(!tbody) return;
+    const resellerInfo = await getResellerInfo(order.resellerId);
+    const statusColors = {
+        'Pending': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        'Shipped': 'bg-blue-100 text-blue-700 border-blue-200',
+        'Delivered': 'bg-green-100 text-green-700 border-green-200',
+        'Cancelled': 'bg-red-100 text-red-700 border-red-200'
+    };
 
-            const row = document.createElement('tr');
-            row.className = "border-b hover:bg-purple-50/30 transition group";
-            row.innerHTML = `
-                <td class="p-4 align-top">
-                    <div class="font-bold text-gray-800 text-xs font-mono">#${order.id.slice(0,6)}</div>
-                    <div class="text-[10px] text-gray-400 mt-1">${date}</div>
-                </td>
-                <td class="p-4 align-top">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-bold">
-                            ${resellerInfo.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <div class="font-bold text-sm text-gray-800">${resellerInfo.name}</div>
-                            <div class="text-[10px] text-gray-500">${resellerInfo.email}</div>
-                        </div>
-                    </div>
-                </td>
-                <td class="p-4">
-                    <div class="text-sm font-semibold text-gray-700">${order.customer?.name || 'Guest'}</div>
-                    <div class="text-xs text-gray-500">${order.customer?.phone || ''}</div>
-                </td>
-                <td class="p-4 text-right font-bold text-gray-700 text-sm font-mono">
-                    ${formatLKR(totalAmount)}
-                    <div class="text-[10px] text-purple-600 font-bold bg-purple-50 px-1 rounded inline-block mt-1">Fee: ${formatLKR(adminProfit)}</div>
-                </td>
-                <td class="p-4 text-center">
-                    <select onchange="window.updateStatus('${order.id}', this.value)" class="px-2 py-1 rounded-lg text-[10px] font-bold border cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500 w-24 ${statusColors[order.status] || 'bg-gray-100'}">
-                        <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                        <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
-                        <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
-                        <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                    </select>
-                </td>
-                <td class="p-4 text-center">
-                    <button onclick="window.viewOrder('${order.id}')" class="bg-white border border-gray-200 text-gray-500 hover:text-purple-600 p-2 rounded-lg shadow-sm"><i class="fa fa-eye"></i></button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        }
+    // Reseller Dashboard එකේ Keys වලට ගැළපෙන සේ සකසා ඇත
+    const totalAmount = order.financials?.grandTotal || 0;
+    const resellerProfit = order.financials?.resellerProfit || 0;
+    const date = order.createdAt ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'N/A';
 
-        async function updateStats() {
-            // Stats logic here (Optional)
-        }
+    // Variation Summary එක සෑදීම
+    const itemSummary = order.items.map(i => {
+        const vars = i.variations ? ` (${Object.values(i.variations).join('/')})` : '';
+        return `<div class="text-[10px] text-gray-600 truncate max-w-[180px] font-medium">• ${i.name}${vars} x${i.quantity}</div>`;
+    }).join('');
 
-        window.viewOrder = async (id) => {
-            const modal = document.getElementById('order-modal');
-            const content = document.getElementById('modal-content');
-            if(modal) modal.classList.remove('hidden');
-            // ... (rest of viewOrder logic same as before)
-        };
+    const row = document.createElement('tr');
+    row.className = "border-b hover:bg-gray-50 transition group";
+    row.innerHTML = `
+        <td class="p-4 align-top">
+            <div class="font-bold text-gray-800 text-xs font-mono">#${order.id.slice(0,8)}</div>
+            <div class="text-[10px] text-gray-400 mt-1">${date}</div>
+        </td>
+        <td class="p-4 align-top">
+            <div class="space-y-1">${itemSummary}</div>
+        </td>
+        <td class="p-4 align-top">
+            <div class="mb-2">
+                <span class="text-[9px] font-bold text-purple-500 uppercase block">Reseller:</span>
+                <div class="text-xs font-bold text-gray-700">${resellerInfo.name}</div>
+            </div>
+            <div>
+                <span class="text-[9px] font-bold text-blue-500 uppercase block">Customer:</span>
+                <div class="text-xs font-bold text-gray-700">${order.customer?.name || 'Guest'}</div>
+                <div class="text-[10px] text-gray-400">${order.customer?.phone || ''}</div>
+                <div class="text-[10px] text-gray-500 mt-1 italic leading-tight max-w-[180px] break-words">
+                    <i class="fa fa-map-marker-alt text-[8px] text-blue-400 mr-1"></i> ${order.customer?.address || 'No Address'}
+                </div>
+            </div>
+        </td>
+        <td class="p-4 text-right align-top">
+            <div class="font-bold text-gray-800 text-sm">${formatLKR(totalAmount)}</div>
+            <div class="text-[9px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded inline-block mt-1 border border-green-100">Profit: ${formatLKR(resellerProfit)}</div>
+        </td>
+        <td class="p-4 text-center align-top">
+            <select onchange="window.updateStatus('${order.id}', this.value)" class="px-2 py-1 rounded-lg text-[10px] font-bold border cursor-pointer focus:outline-none w-24 ${statusColors[order.status] || 'bg-gray-100'}">
+                <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Shipped" ${order.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+            </select>
+        </td>
+        <td class="p-4 text-center align-top">
+            <button onclick="window.viewOrder('${order.id}')" class="bg-white border border-gray-200 text-gray-500 hover:text-purple-600 p-2 rounded-lg shadow-sm transition-colors"><i class="fa fa-eye"></i></button>
+        </td>
+    `;
+    tbody.appendChild(row);
+}
 
-        window.updateStatus = async (id, status) => {
-            try { 
-                await updateDoc(doc(db, 'reseller_orders', id), { status }); 
-                showToast(`Order ${status}`, 'success'); 
-                loadResellerOrders(true);
-            } catch(e) { showToast('Update failed', 'error'); }
-        };
-
-        // SAFETY CHECK FOR SEARCH LISTENER
-        const searchInput = document.getElementById('order-search');
-        if(searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                document.querySelectorAll('#orders-table-body tr').forEach(row => {
-                    row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
-                });
+    async function updateStats() {
+        try {
+            const snap = await getDocs(collection(db, 'reseller_orders'));
+            let totalRev = 0;
+            let totalWholesale = 0;
+            snap.forEach(d => {
+                const data = d.data();
+                totalRev += (data.financials?.grandTotal || 0);
+                totalWholesale += (data.financials?.wholesaleSubtotal || 0);
             });
+            document.getElementById('stat-count').innerText = snap.size;
+            document.getElementById('stat-volume').innerText = formatLKR(totalRev);
+            document.getElementById('stat-profit').innerText = formatLKR(totalWholesale);
+        } catch (e) { console.error(e); }
+    }
+
+    window.viewOrder = async (id) => {
+        const modal = document.getElementById('order-modal');
+        const content = document.getElementById('modal-content');
+        if(modal) modal.classList.remove('hidden');
+        content.innerHTML = '<div class="flex justify-center py-10"><i class="fa fa-spinner fa-spin text-3xl text-purple-600"></i></div>';
+
+        try {
+            const orderSnap = await getDoc(doc(db, 'reseller_orders', id));
+            if (!orderSnap.exists()) return;
+            const order = orderSnap.data();
+
+            // Items with variations string
+            let itemsHtml = order.items.map(item => {
+                const varDisplay = item.variations ? Object.values(item.variations).join(' | ') : 'No Variations';
+                return `
+                    <div class="flex justify-between items-center border-b py-3 last:border-0">
+                        <div class="flex gap-3">
+                            <img src="${item.imageUrl || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded-lg object-cover border">
+                            <div>
+                                <p class="font-bold text-sm text-gray-800">${item.name}</p>
+                                <p class="text-[10px] text-purple-600 font-bold uppercase tracking-tight">${varDisplay}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-bold text-gray-500">x${item.quantity}</p>
+                            <p class="text-xs font-bold text-gray-800">${formatLKR(item.sellingPrice)}</p>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            content.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                        <h4 class="text-[10px] font-black text-purple-400 uppercase mb-2">Customer Shipping</h4>
+                        <p class="font-bold text-gray-800">${order.customer?.name}</p>
+                        <p class="text-sm text-gray-600">${order.customer?.phone}</p>
+                        <p class="text-xs text-gray-500 mt-1 italic">${order.customer?.address}</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                        <h4 class="text-[10px] font-black text-blue-400 uppercase mb-2">Payment Info</h4>
+                        <p class="text-sm font-bold text-blue-700">Method: ${order.method?.toUpperCase()}</p>
+                        <p class="text-xs text-blue-600">Status: ${order.status}</p>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h4 class="text-[10px] font-black text-gray-400 uppercase mb-3 border-b pb-1">Order Items</h4>
+                    <div class="space-y-1">${itemsHtml}</div>
+                </div>
+
+                <div class="bg-gray-900 text-white p-5 rounded-xl space-y-2 shadow-inner">
+                    <div class="flex justify-between text-xs opacity-70"><span>Wholesale Subtotal:</span><span>${formatLKR(order.financials?.wholesaleSubtotal || 0)}</span></div>
+                    <div class="flex justify-between text-xs opacity-70"><span>Delivery Fee:</span><span>${formatLKR(order.financials?.delivery || 0)}</span></div>
+                    <div class="flex justify-between text-xs text-green-400 font-bold"><span>Reseller Profit:</span><span>${formatLKR(order.financials?.resellerProfit || 0)}</span></div>
+                    <div class="flex justify-between text-xl font-black border-t border-white/10 pt-3 mt-2 text-rose-500">
+                        <span>Total Bill:</span><span>${formatLKR(order.financials?.grandTotal || 0)}</span>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            content.innerHTML = '<p class="text-red-500">Error loading details.</p>';
         }
+    };
 
-        window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) { loadResellerOrders(); }
+    window.updateStatus = async (id, status) => {
+        try { 
+            await updateDoc(doc(db, 'reseller_orders', id), { status }); 
+            showToast(`Order marked as ${status}`, 'success'); 
+            loadResellerOrders(true);
+        } catch(e) { showToast('Update failed', 'error'); }
+    };
+
+    // Search function
+    const searchInput = document.getElementById('order-search');
+    if(searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('#orders-table-body tr').forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+            });
         });
+    }
 
-        loadResellerOrders(true);
-    </script>
+    window.addEventListener('scroll', () => {
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) { loadResellerOrders(); }
+    });
+
+    loadResellerOrders(true);
+</script>
 </body>
 </html>
