@@ -272,10 +272,15 @@
 
                 return `
                     <tr class="border-b hover:bg-gray-50 transition">
-                        <td class="p-4 align-top">
-                            <div class="font-bold text-gray-800 text-xs font-mono">#${o.id.slice(0,6)}</div>
-                            <div class="text-[10px] text-gray-400 mt-1">${o.createdAt?.toDate().toLocaleDateString() || '-'}</div>
-                        </td>
+                       <td class="p-4 align-top">
+    <div class="flex items-center gap-1">
+        <div class="font-bold text-sm text-gray-800">${o.customerInfo?.name || 'Guest'}</div>
+        <button onclick='window.showCustomerInfo(${JSON.stringify(o.customerInfo)})' class="text-blue-500 hover:text-blue-700 transition">
+            <i class="fa fa-info-circle text-xs"></i>
+        </button>
+    </div>
+    <div class="text-xs text-gray-500">${o.customerInfo?.phone || ''}</div>
+</td>
                         <td class="p-4 align-top">
                             <div class="font-bold text-sm text-gray-800">${o.customerInfo?.name || 'Guest'}</div>
                             <div class="text-xs text-gray-500">${o.customerInfo?.phone || ''}</div>
@@ -341,6 +346,48 @@
 
         // Init
         loadOrders(true);
+
+        // Add this near your other window.functions
+window.showCustomerInfo = (info) => {
+    if (!info) {
+        showToast("No customer details found", "error");
+        return;
+    }
+
+    Swal.fire({
+        title: `<span class="text-gray-800">Customer Profile</span>`,
+        html: `
+            <div class="text-left text-sm space-y-3 p-2">
+                <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                    <i class="fa fa-user text-mudalali-green mt-1"></i>
+                    <div><p class="text-gray-400 text-[10px] font-bold uppercase">Full Name</p><p class="font-bold text-gray-700">${info.name || 'N/A'}</p></div>
+                </div>
+                <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                    <i class="fa fa-phone text-mudalali-green mt-1"></i>
+                    <div><p class="text-gray-400 text-[10px] font-bold uppercase">Phone</p><p class="font-bold text-gray-700">${info.phone || 'N/A'}</p></div>
+                </div>
+                <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                    <i class="fa fa-envelope text-mudalali-green mt-1"></i>
+                    <div><p class="text-gray-400 text-[10px] font-bold uppercase">Email</p><p class="font-bold text-gray-700">${info.email || 'N/A'}</p></div>
+                </div>
+                <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                    <i class="fa fa-map-marker-alt text-mudalali-green mt-1"></i>
+                    <div>
+                        <p class="text-gray-400 text-[10px] font-bold uppercase">Delivery Address</p>
+                        <p class="font-bold text-gray-700">${info.address || ''}, ${info.city || ''}</p>
+                        <p class="text-xs text-gray-500">${info.district || ''} - ${info.postalCode || ''}</p>
+                    </div>
+                </div>
+            </div>
+        `,
+        confirmButtonText: 'Close',
+        confirmButtonColor: '#3a6a4a', // Using your mudalali-green
+        showCloseButton: true,
+        customClass: {
+            popup: 'rounded-2xl shadow-2xl border border-gray-100'
+        }
+    });
+};
 
     </script>
 </body>
