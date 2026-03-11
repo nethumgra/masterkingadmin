@@ -38,6 +38,9 @@
                 <button onclick="loadResellerOrders(true)" class="bg-white border border-gray-300 text-gray-600 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-50 transition shadow-sm">
                     <i class="fa fa-sync-alt mr-1"></i> Refresh
                 </button>
+                <button onclick="clearAllOrders()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition shadow-sm flex items-center gap-2">
+                    <i class="fa fa-trash"></i> Clear All
+                </button>
             </div>
         </div>
 
@@ -205,14 +208,15 @@ async function renderResellerRow(order, tbody) {
             <div class="mb-2">
                 <span class="text-[9px] font-bold text-purple-500 uppercase block">Reseller:</span>
                 <div class="text-xs font-bold text-gray-700">${resellerInfo.name}</div>
+                <div class="text-[10px] text-gray-400">${resellerInfo.email}</div>
             </div>
-            <div>
+            <div class="bg-blue-50 rounded-lg p-2 border border-blue-100 space-y-1">
                 <span class="text-[9px] font-bold text-blue-500 uppercase block">Customer:</span>
-                <div class="text-xs font-bold text-gray-700">${order.customer?.name || 'Guest'}</div>
-                <div class="text-[10px] text-gray-400">${order.customer?.phone || ''}</div>
-                <div class="text-[10px] text-gray-500 mt-1 italic leading-tight max-w-[180px] break-words">
-                    <i class="fa fa-map-marker-alt text-[8px] text-blue-400 mr-1"></i> ${order.customer?.address || 'No Address'}
-                </div>
+                <div class="text-xs font-bold text-gray-700 flex items-center gap-1"><i class="fa fa-user text-blue-400 text-[9px]"></i> ${order.customer?.name || 'Guest'}</div>
+                <div class="text-[10px] text-gray-600 flex items-center gap-1"><i class="fa fa-phone text-green-500 text-[9px]"></i> ${order.customer?.phone || '-'}</div>
+                ${order.customer?.phone2 ? `<div class="text-[10px] text-gray-500 flex items-center gap-1"><i class="fa fa-phone text-green-400 text-[9px]"></i> ${order.customer.phone2}</div>` : ''}
+                ${order.customer?.district ? `<div class="text-[10px] text-blue-600 font-bold flex items-center gap-1"><i class="fa fa-map text-blue-400 text-[9px]"></i> ${order.customer.district}</div>` : ''}
+                <div class="text-[10px] text-gray-500 italic flex items-start gap-1"><i class="fa fa-map-marker-alt text-red-400 text-[9px] mt-0.5"></i> <span>${order.customer?.address || 'No Address'}</span></div>
             </div>
         </td>
         <td class="p-4 text-right align-top">
@@ -228,7 +232,10 @@ async function renderResellerRow(order, tbody) {
             </select>
         </td>
         <td class="p-4 text-center align-top">
-            <button onclick="window.viewOrder('${order.id}')" class="bg-white border border-gray-200 text-gray-500 hover:text-purple-600 p-2 rounded-lg shadow-sm transition-colors"><i class="fa fa-eye"></i></button>
+            <div class="flex gap-1 justify-center">
+                <button onclick="window.viewOrder('${order.id}')" class="bg-white border border-gray-200 text-gray-500 hover:text-purple-600 p-2 rounded-lg shadow-sm transition-colors"><i class="fa fa-eye"></i></button>
+                <button onclick="window.deleteOrder('${order.id}', this)" class="bg-white border border-red-100 text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg shadow-sm transition-colors"><i class="fa fa-trash"></i></button>
+            </div>
         </td>
     `;
     tbody.appendChild(row);
@@ -320,6 +327,71 @@ async function renderResellerRow(order, tbody) {
             showToast(`Order marked as ${status}`, 'success'); 
             loadResellerOrders(true);
         } catch(e) { showToast('Update failed', 'error'); }
+    };
+
+    // ── DELETE SINGLE ORDER ────────────────────────────────────
+    window.deleteOrder = async (id, btn) => {
+        const result = await Swal.fire({
+            title: 'Delete Order?',
+            text: 'This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Delete',
+            cancelButtonText: 'Cancel'
+        });
+        if (!result.isConfirmed) return;
+
+        try {
+            const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            await deleteDoc(doc(db, 'reseller_orders', id));
+            // Remove row from table
+            btn.closest('tr').remove();
+            showToast('Order deleted', 'success');
+            updateStats();
+        } catch(e) {
+            console.error(e);
+            showToast('Delete failed', 'error');
+        }
+    };
+
+    // ── CLEAR ALL ORDERS ───────────────────────────────────────
+    window.clearAllOrders = async () => {
+        const result = await Swal.fire({
+            title: 'Clear ALL Orders?',
+            html: '<p class="text-gray-600 text-sm">This will permanently delete <strong>all reseller orders</strong>. This cannot be undone!</p>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, Clear All',
+            cancelButtonText: 'Cancel',
+            input: 'text',
+            inputPlaceholder: 'Type DELETE to confirm',
+            inputValidator: (value) => {
+                if (value !== 'DELETE') return 'Please type DELETE to confirm';
+            }
+        });
+        if (!result.isConfirmed) return;
+
+        const clearBtn = document.querySelector('button[onclick="clearAllOrders()"]');
+        if (clearBtn) { clearBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Clearing...'; clearBtn.disabled = true; }
+
+        try {
+            const { deleteDoc, getDocs: _getDocs, collection: _col } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+            const snap = await _getDocs(_col(db, 'reseller_orders'));
+            const deletePromises = snap.docs.map(d => deleteDoc(doc(db, 'reseller_orders', d.id)));
+            await Promise.all(deletePromises);
+
+            showToast(`${snap.size} orders cleared!`, 'success');
+            loadResellerOrders(true);
+        } catch(e) {
+            console.error(e);
+            showToast('Clear failed: ' + e.message, 'error');
+        } finally {
+            if (clearBtn) { clearBtn.innerHTML = '<i class="fa fa-trash"></i> Clear All'; clearBtn.disabled = false; }
+        }
     };
 
     // Search function

@@ -25,7 +25,7 @@ const db = getFirestore(app);
 /**
  * Checks if the user is authenticated and has admin privileges.
  * Redirects to login page if not authenticated, or dashboard if already logged in on index.
- * @param {boolean} requireAuth - Whether to redirect to login if not authenticated.
+ * @param {boolean} requireAuth 
  */
 function checkAdminAuth(requireAuth = true) {
     onAuthStateChanged(auth, async (user) => {

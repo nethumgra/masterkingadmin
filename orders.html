@@ -51,6 +51,9 @@
                 <button onclick="applyFilters()" class="bg-gray-800 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-black transition">
                     Apply
                 </button>
+                <button onclick="window.clearOrderHistory()" class="bg-red-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition flex items-center gap-1">
+                    <i class="fa fa-trash-alt"></i> Clear History
+                </button>
             </div>
         </div>
 
@@ -100,16 +103,16 @@
                 <table class="w-full text-left text-sm text-gray-600">
                     <thead class="bg-white text-gray-700 uppercase text-xs font-bold border-b sticky top-0 z-10 shadow-sm">
                         <tr>
-                            <th class="p-4">Order ID</th>
                             <th class="p-4">Customer</th>
                             <th class="p-4">Product Details</th>
+                            <th class="p-4">Due Date</th>
                             <th class="p-4 text-right">Amount</th>
                             <th class="p-4 text-center">Status</th>
                             <th class="p-4 text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody id="orders-table-body" class="divide-y divide-gray-100">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
             
@@ -141,14 +144,12 @@
         checkAdminAuth();
         renderSidebar('orders');
 
-        // State Variables
         let lastVisibleDoc = null;
         let isFetching = false;
         let hasMore = true;
         const BATCH_SIZE = 20;
         let currentFilters = { year: 'all', month: 'all' };
 
-        // --- 1. Load Orders (Infinite Scroll) ---
         async function loadOrders(reset = false) {
             if (isFetching || (!hasMore && !reset)) return;
             isFetching = true;
@@ -168,10 +169,7 @@
             }
 
             try {
-                // Build Query Constraints
                 let constraints = buildQueryConstraints();
-                
-                // Add Sorting & Pagination
                 constraints.push(orderBy('createdAt', 'desc'));
                 constraints.push(limit(BATCH_SIZE));
                 if (lastVisibleDoc && !reset) constraints.push(startAfter(lastVisibleDoc));
@@ -189,16 +187,12 @@
                     renderRows(orders, tbody);
                 }
 
-                // *** SMART STATS UPDATE ***
-                // Only update stats on Reset (Filter Change), not on every scroll
-                if (reset) {
-                    updateDashboardStats(buildQueryConstraints());
-                }
+                if (reset) updateDashboardStats(buildQueryConstraints());
 
             } catch (e) {
                 console.error("Load Error:", e);
                 if(e.message.includes("requires an index")) {
-                     alert("🔥 System Alert: Firebase Index Required! Check the console for the link to create it.");
+                     alert("Firebase Index Required! Check the console.");
                 }
             } finally {
                 isFetching = false;
@@ -225,39 +219,28 @@
             return constraints;
         }
 
-        // --- 2. Smart Stats (Aggregations - Cost Optimized) ---
         async function updateDashboardStats(baseConstraints) {
-            // Show loading state on cards
             document.getElementById('card-total-count').textContent = '...';
             document.getElementById('card-total-sales').textContent = '...';
             document.getElementById('card-our-profit').textContent = '...';
-
             try {
-                // Query for Aggregations (No Limit, No OrderBy needed usually)
                 const q = query(collection(db, 'orders'), ...baseConstraints);
-
-                // Parallel Execution for Speed
                 const [countSnap, sumSnap] = await Promise.all([
                     getCountFromServer(q),
                     getAggregateFromServer(q, { totalSales: sum('totalAmount') })
                 ]);
-
                 const count = countSnap.data().count;
                 const totalSales = sumSnap.data().totalSales;
-                const ourProfit = totalSales * 0.05; // 5% Calculation
-
-                // Update UI
                 document.getElementById('card-total-count').textContent = count;
                 document.getElementById('card-total-sales').textContent = formatLKR(totalSales);
-                document.getElementById('card-our-profit').textContent = formatLKR(ourProfit);
-
+                document.getElementById('card-our-profit').textContent = formatLKR(totalSales * 0.05);
             } catch (e) {
                 console.error("Stats Error:", e);
                 document.getElementById('card-total-sales').textContent = 'N/A';
             }
         }
 
-        // --- 3. Render Table Rows ---
+        // --- Render Table Rows ---
         function renderRows(orders, tbody) {
             const html = orders.map(o => {
                 const firstItem = o.items?.[0] || {};
@@ -270,36 +253,57 @@
                     'Cancelled': 'bg-red-100 text-red-700'
                 };
 
+                const dueDateStr = o.customerInfo?.dueDate
+                    ? `<span class="font-bold text-orange-600 text-xs">${o.customerInfo.dueDate}</span>`
+                    : '<span class="text-gray-300 text-xs">—</span>';
+
+                // Safely serialize customerInfo for onclick
+                const infoJson = JSON.stringify(o.customerInfo || {}).replace(/'/g, "&#39;");
+
                 return `
                     <tr class="border-b hover:bg-gray-50 transition">
-                       <td class="p-4 align-top">
-    <div class="flex items-center gap-1">
-        <div class="font-bold text-sm text-gray-800">${o.customerInfo?.name || 'Guest'}</div>
-        <button onclick='window.showCustomerInfo(${JSON.stringify(o.customerInfo)})' class="text-blue-500 hover:text-blue-700 transition">
-            <i class="fa fa-info-circle text-xs"></i>
-        </button>
-    </div>
-    <div class="text-xs text-gray-500">${o.customerInfo?.phone || ''}</div>
-</td>
+
+                        <!-- CUSTOMER (no duplicate) -->
                         <td class="p-4 align-top">
-                            <div class="font-bold text-sm text-gray-800">${o.customerInfo?.name || 'Guest'}</div>
-                            <div class="text-xs text-gray-500">${o.customerInfo?.phone || ''}</div>
+                            <div class="flex items-start gap-1">
+                                <div class="space-y-0.5">
+                                    <div class="font-bold text-sm text-gray-800">${o.customerInfo?.name || 'Guest'}</div>
+                                    <div class="text-xs text-gray-500 flex items-center gap-1"><i class="fa fa-phone text-green-400 text-[9px]"></i> ${o.customerInfo?.phone || '—'}</div>
+                                    ${o.customerInfo?.phoneTwo ? `<div class="text-xs text-gray-400 flex items-center gap-1"><i class="fa fa-phone text-green-300 text-[9px]"></i> ${o.customerInfo.phoneTwo}</div>` : ''}
+                                    ${o.customerInfo?.district ? `<div class="text-[10px] text-blue-600 font-bold flex items-center gap-1"><i class="fa fa-map text-blue-400 text-[9px]"></i> ${o.customerInfo.district}</div>` : ''}
+                                    ${o.customerInfo?.address ? `<div class="text-[10px] text-gray-400 italic flex items-start gap-1 max-w-[140px]"><i class="fa fa-map-marker-alt text-rose-300 text-[9px] mt-0.5"></i> <span class="line-clamp-2">${o.customerInfo.address}</span></div>` : ''}
+                                </div>
+                                <button onclick='window.showCustomerInfo(${infoJson})'
+                                    class="ml-1 text-blue-400 hover:text-blue-600 transition flex-shrink-0 mt-0.5" title="View full profile">
+                                    <i class="fa fa-info-circle text-sm"></i>
+                                </button>
+                            </div>
                         </td>
+
+                        <!-- PRODUCT DETAILS -->
                         <td class="p-4">
                             <div class="flex items-center gap-3">
                                 <img src="${firstItem.imageUrl || 'https://placehold.co/40'}" class="w-10 h-10 object-cover rounded border bg-gray-100">
                                 <div>
-                                    <p class="font-bold text-xs text-gray-700 line-clamp-1" title="${firstItem.name}">${firstItem.name || 'Unknown'}</p>
+                                    <p class="font-bold text-xs text-gray-700 line-clamp-1" title="${firstItem.name || ''}">${firstItem.name || 'Unknown'}</p>
                                     <p class="text-[10px] text-blue-600 font-bold"><i class="fa fa-store"></i> ${firstItem.storeName || 'System'}</p>
                                     ${otherCount > 0 ? `<span class="text-[9px] text-gray-400">+${otherCount} more items</span>` : ''}
                                 </div>
                             </div>
                         </td>
-                        <td class="p-4 text-right font-bold text-gray-700 text-sm font-mono">
+
+                        <!-- DUE DATE -->
+                        <td class="p-4 align-top">${dueDateStr}</td>
+
+                        <!-- AMOUNT -->
+                        <td class="p-4 text-right font-bold text-gray-700 text-sm font-mono align-top">
                             ${formatLKR(o.totalAmount)}
                         </td>
-                        <td class="p-4 text-center">
-                            <select onchange="window.updateStatus('${o.id}', this.value)" class="px-2 py-1 rounded text-[10px] font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-green-500 ${statusColors[o.status] || 'bg-gray-100'}">
+
+                        <!-- STATUS -->
+                        <td class="p-4 text-center align-top">
+                            <select onchange="window.updateStatus('${o.id}', this.value)"
+                                class="px-2 py-1 rounded text-[10px] font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-green-500 ${statusColors[o.status] || 'bg-gray-100'}">
                                 <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
                                 <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
                                 <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
@@ -307,8 +311,13 @@
                                 <option value="Cancelled" ${o.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                             </select>
                         </td>
-                        <td class="p-4 text-center">
-                            <button onclick="window.viewOrder('${o.id}')" class="text-gray-400 hover:text-blue-600 transition"><i class="fa fa-eye"></i></button>
+
+                        <!-- ACTION -->
+                        <td class="p-4 text-center align-top">
+                            <div class="flex items-center justify-center gap-1">
+                                <button onclick="window.viewOrder('${o.id}')" class="text-gray-400 hover:text-blue-600 transition p-1.5 rounded hover:bg-blue-50"><i class="fa fa-eye"></i></button>
+                                <button onclick="window.deleteOrder('${o.id}', this)" class="text-gray-300 hover:text-red-500 transition p-1.5 rounded hover:bg-red-50"><i class="fa fa-trash"></i></button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -316,7 +325,6 @@
             tbody.insertAdjacentHTML('beforeend', html);
         }
 
-        // --- 4. Listeners & Actions ---
         window.applyFilters = () => {
             currentFilters = {
                 year: document.getElementById('filter-year').value,
@@ -329,8 +337,29 @@
             try { await updateDoc(doc(db, 'orders', id), { status }); showToast(`Updated to ${status}`, 'success'); }
             catch(e) { showToast('Error updating', 'error'); }
         };
+
+        window.deleteOrder = async (id, btn) => {
+            const result = await Swal.fire({
+                title: 'Delete Order?',
+                text: 'This order will be permanently deleted.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '<i class="fa fa-trash mr-1"></i> Delete',
+                cancelButtonText: 'Cancel'
+            });
+            if (!result.isConfirmed) return;
+            try {
+                const { deleteDoc: _del } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                await _del(doc(db, 'orders', id));
+                btn.closest('tr').remove();
+                showToast('Order deleted', 'success');
+            } catch(e) {
+                showToast('Delete failed', 'error');
+            }
+        };
         
-        // Simple Client Side Search (Cost Efficient)
         document.getElementById('order-search').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('#orders-table-body tr').forEach(row => {
@@ -344,50 +373,170 @@
             }
         });
 
-        // Init
         loadOrders(true);
 
-        // Add this near your other window.functions
-window.showCustomerInfo = (info) => {
-    if (!info) {
-        showToast("No customer details found", "error");
-        return;
-    }
+        // ============================================
+        // Clear Order History
+        // ============================================
+        window.clearOrderHistory = async () => {
+            // Step 1: First warning
+            const step1 = await Swal.fire({
+                title: '<span class="text-red-600">Clear Order History?</span>',
+                html: `<p class="text-gray-600 text-sm">මේ action ඒකෙන් <strong>සියලුම orders</strong> permanently delete වෙනවා.<br>Undo කරන්න බෑ!</p>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, continue',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                customClass: { popup: 'rounded-2xl' }
+            });
 
-    Swal.fire({
-        title: `<span class="text-gray-800">Customer Profile</span>`,
-        html: `
-            <div class="text-left text-sm space-y-3 p-2">
-                <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
-                    <i class="fa fa-user text-mudalali-green mt-1"></i>
-                    <div><p class="text-gray-400 text-[10px] font-bold uppercase">Full Name</p><p class="font-bold text-gray-700">${info.name || 'N/A'}</p></div>
-                </div>
-                <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
-                    <i class="fa fa-phone text-mudalali-green mt-1"></i>
-                    <div><p class="text-gray-400 text-[10px] font-bold uppercase">Phone</p><p class="font-bold text-gray-700">${info.phone || 'N/A'}</p></div>
-                </div>
-                <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
-                    <i class="fa fa-envelope text-mudalali-green mt-1"></i>
-                    <div><p class="text-gray-400 text-[10px] font-bold uppercase">Email</p><p class="font-bold text-gray-700">${info.email || 'N/A'}</p></div>
-                </div>
-                <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
-                    <i class="fa fa-map-marker-alt text-mudalali-green mt-1"></i>
-                    <div>
-                        <p class="text-gray-400 text-[10px] font-bold uppercase">Delivery Address</p>
-                        <p class="font-bold text-gray-700">${info.address || ''}, ${info.city || ''}</p>
-                        <p class="text-xs text-gray-500">${info.district || ''} - ${info.postalCode || ''}</p>
+            if (!step1.isConfirmed) return;
+
+            // Step 2: Type confirmation
+            const step2 = await Swal.fire({
+                title: '<span class="text-red-600">Final Confirmation</span>',
+                html: `<p class="text-gray-600 text-sm mb-3">Confirm කරන්න <strong>"DELETE"</strong> කියලා type කරන්න:</p>
+                       <input id="confirm-input" class="w-full border-2 border-red-300 rounded-lg p-2 text-center font-bold text-red-600 focus:outline-none focus:border-red-500" placeholder="DELETE">`,
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa fa-trash mr-1"></i> Delete All Orders',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                customClass: { popup: 'rounded-2xl' },
+                preConfirm: () => {
+                    const val = document.getElementById('confirm-input').value;
+                    if (val !== 'DELETE') {
+                        Swal.showValidationMessage('"DELETE" කියලා හරියටම type කරන්න');
+                        return false;
+                    }
+                    return true;
+                }
+            });
+
+            if (!step2.isConfirmed) return;
+
+            // Step 3: Delete all orders
+            Swal.fire({
+                title: 'Deleting...',
+                html: '<p class="text-gray-500 text-sm">Orders delete වෙමින් පවතී...</p>',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                let deletedCount = 0;
+                let hasMoreToDelete = true;
+
+                const { writeBatch } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+                while (hasMoreToDelete) {
+                    const snap = await getDocs(query(collection(db, 'orders'), limit(500)));
+                    if (snap.empty) { hasMoreToDelete = false; break; }
+
+                    const batch = writeBatch(db);
+                    snap.docs.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    deletedCount += snap.docs.length;
+
+                    if (snap.docs.length < 500) hasMoreToDelete = false;
+                }
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Done!',
+                    html: `<p class="text-gray-600 text-sm"><strong>${deletedCount}</strong> orders successfully deleted.</p>`,
+                    confirmButtonColor: '#3a6a4a',
+                    customClass: { popup: 'rounded-2xl' }
+                });
+
+                loadOrders(true);
+
+            } catch (err) {
+                console.error("Clear error:", err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: 'Orders delete කරන්න බැරි වුණා. Try again.',
+                    confirmButtonColor: '#3a6a4a'
+                });
+            }
+        };
+
+        // ============================================
+        // Customer Profile Popup - Full Details
+        // ============================================
+        window.showCustomerInfo = (info) => {
+            if (!info) { showToast("No customer details found", "error"); return; }
+
+            Swal.fire({
+                title: `<span class="text-gray-800 text-lg font-bold"><i class="fa fa-user-circle text-mudalali-green mr-2"></i>Customer Profile</span>`,
+                html: `
+                    <div class="text-left text-sm space-y-2 p-1">
+
+                        <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                            <i class="fa fa-user text-green-700 mt-0.5 w-4 text-center"></i>
+                            <div>
+                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Full Name</p>
+                                <p class="font-bold text-gray-800">${info.name || 'N/A'}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                            <i class="fa fa-phone text-green-700 mt-0.5 w-4 text-center"></i>
+                            <div>
+                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Contact Number One</p>
+                                <p class="font-bold text-gray-800">${info.phone || 'N/A'}</p>
+                            </div>
+                        </div>
+
+                        ${info.phoneTwo ? `
+                        <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                            <i class="fa fa-phone-alt text-green-700 mt-0.5 w-4 text-center"></i>
+                            <div>
+                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Contact Number Two</p>
+                                <p class="font-bold text-gray-800">${info.phoneTwo}</p>
+                            </div>
+                        </div>` : ''}
+
+                        <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                            <i class="fa fa-envelope text-green-700 mt-0.5 w-4 text-center"></i>
+                            <div>
+                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Email</p>
+                                <p class="font-bold text-gray-800">${info.email || 'N/A'}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 bg-gray-50 p-3 rounded-lg">
+                            <i class="fa fa-map-marker-alt text-green-700 mt-0.5 w-4 text-center"></i>
+                            <div>
+                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Delivery Address</p>
+                                <p class="font-bold text-gray-800">${info.address || 'N/A'}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">${[info.city, info.district].filter(Boolean).join(', ') || '—'}</p>
+                            </div>
+                        </div>
+
+                        ${info.dueDate ? `
+                        <div class="flex items-start gap-3 bg-orange-50 p-3 rounded-lg border border-orange-100">
+                            <i class="fa fa-calendar-alt text-orange-500 mt-0.5 w-4 text-center"></i>
+                            <div>
+                                <p class="text-gray-400 text-[10px] font-bold uppercase tracking-wide">Due Date</p>
+                                <p class="font-bold text-orange-600">${info.dueDate}</p>
+                            </div>
+                        </div>` : ''}
+
                     </div>
-                </div>
-            </div>
-        `,
-        confirmButtonText: 'Close',
-        confirmButtonColor: '#3a6a4a', // Using your mudalali-green
-        showCloseButton: true,
-        customClass: {
-            popup: 'rounded-2xl shadow-2xl border border-gray-100'
-        }
-    });
-};
+                `,
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#3a6a4a',
+                showCloseButton: true,
+                width: '420px',
+                customClass: {
+                    popup: 'rounded-2xl shadow-2xl border border-gray-100'
+                }
+            });
+        };
 
     </script>
 </body>
