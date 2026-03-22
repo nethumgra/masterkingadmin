@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard Overview - TUTU Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' },
+                        'ai-purple': '#8b5cf6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #db2777; }
+        .seller-row { transition: background 0.15s; }
+        .seller-row:hover { background: #fdf2f8; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Seller Overview</h1>
+                <p class="text-sm text-gray-500">Performance snapshot across all sellers</p>
+            </div>
+            <a href="sellers.html" class="bg-tutu-pink text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-tutu-pink-dark transition flex items-center gap-2">
+                <i class="fa fa-store"></i> Manage Sellers
+            </a>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-tutu-pink">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Sellers</p>
+                <h2 class="text-3xl font-bold mt-1 text-gray-800" id="stat-total">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-green-500">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Approved</p>
+                <h2 class="text-3xl font-bold mt-1 text-green-600" id="stat-approved">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-yellow-500">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Pending</p>
+                <h2 class="text-3xl font-bold mt-1 text-yellow-600" id="stat-pending">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Revenue</p>
+                <h2 class="text-2xl font-bold mt-1 text-blue-600" id="stat-revenue">Rs. 0</h2>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa fa-chart-pie text-tutu-pink"></i> Seller Status Breakdown
+                </h3>
+                <canvas id="statusChart" height="200"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa fa-chart-bar text-tutu-pink"></i> Top Sellers by Revenue
+                </h3>
+                <canvas id="revenueChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Performers Table -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-bold text-xl text-gray-800">All Sellers</h3>
+                <div class="relative">
+                    <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="seller-search" placeholder="Search sellers..."
+                        class="pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-tutu-pink"
+                        oninput="renderTable()">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-pink-50/50 text-gray-600 uppercase text-xs font-bold border-b border-pink-100">
+                        <tr>
+                            <th class="p-4">Seller</th>
+                            <th class="p-4">Store</th>
+                            <th class="p-4 text-center">Status</th>
+                            <th class="p-4 text-center">Products</th>
+                            <th class="p-4 text-right">Revenue</th>
+                            <th class="p-4 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sellers-table" class="divide-y divide-gray-100">
+                        <tr><td colspan="6" class="p-8 text-center text-gray-400">
+                            <i class="fas fa-spinner fa-spin mr-2 text-tutu-pink"></i> Loading...
+                        </td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script type="module">
+        import { db, checkAdminAuth, renderSidebar, formatLKR } from './common.js';
+        import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('sellers');
+
+        let allSellers = [];
+        let statusChart, revenueChart;
+
+        async function loadData() {
+            const snap = await getDocs(collection(db, 'users'));
+            allSellers = snap.docs
+                .map(d => ({ id: d.id, ...d.data() }))
+                .filter(u => u.isSeller === true || u.role === 'seller');
+
+            // Count stats
+            document.getElementById('stat-total').textContent = allSellers.length;
+            document.getElementById('stat-approved').textContent = allSellers.filter(s => s.sellerStatus === 'approved').length;
+            document.getElementById('stat-pending').textContent = allSellers.filter(s => s.sellerStatus === 'pending' || !s.sellerStatus).length;
+
+            // Revenue (try to get from orders)
+            try {
+                const ordersSnap = await getDocs(collection(db, 'orders'));
+                const orders = ordersSnap.docs.map(d => d.data());
+                const totalRev = orders.reduce((sum, o) => sum + (o.totalAmount || o.total || 0), 0);
+                document.getElementById('stat-revenue').textContent = formatLKR(totalRev);
+            } catch(e) {}
+
+            buildCharts();
+            renderTable();
+        }
+
+        function buildCharts() {
+            const approved = allSellers.filter(s => s.sellerStatus === 'approved').length;
+            const pending = allSellers.filter(s => !s.sellerStatus || s.sellerStatus === 'pending').length;
+            const suspended = allSellers.filter(s => s.sellerStatus === 'suspended').length;
+
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Approved', 'Pending', 'Suspended'],
+                    datasets: [{ data: [approved, pending, suspended], backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'], borderWidth: 0 }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+
+            const top5 = [...allSellers].sort((a,b) => (b.totalRevenue||0) - (a.totalRevenue||0)).slice(0,5);
+            if (revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(document.getElementById('revenueChart'), {
+                type: 'bar',
+                data: {
+                    labels: top5.map(s => s.storeName || s.displayName || 'Seller'),
+                    datasets: [{ label: 'Revenue (Rs.)', data: top5.map(s => s.totalRevenue || 0), backgroundColor: '#db2777', borderRadius: 8 }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        window.renderTable = function() {
+            const search = document.getElementById('seller-search').value.toLowerCase();
+            const filtered = allSellers.filter(s =>
+                (s.displayName||'').toLowerCase().includes(search) ||
+                (s.storeName||'').toLowerCase().includes(search) ||
+                (s.email||'').toLowerCase().includes(search)
+            );
+
+            const tbody = document.getElementById('sellers-table');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">No sellers found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => {
+                const statusBadge = s.sellerStatus === 'approved'
+                    ? `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold">✅ Approved</span>`
+                    : s.sellerStatus === 'suspended'
+                    ? `<span class="bg-red-100 text-red-600 px-2.5 py-1 rounded-full text-xs font-bold">🚫 Suspended</span>`
+                    : `<span class="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-bold">⏳ Pending</span>`;
+
+                return `
+                <tr class="seller-row">
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-pink-100 flex items-center justify-center text-tutu-pink font-bold text-sm flex-shrink-0">
+                                ${(s.displayName||'S')[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">${s.displayName || 'Unknown'}</p>
+                                <p class="text-xs text-gray-400">${s.email || ''}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-sm text-gray-600">${s.storeName || '—'}</td>
+                    <td class="p-4 text-center">${statusBadge}</td>
+                    <td class="p-4 text-center text-gray-600 font-semibold">${s.productCount || 0}</td>
+                    <td class="p-4 text-right font-semibold text-gray-800">${formatLKR(s.totalRevenue || 0)}</td>
+                    <td class="p-4 text-center">
+                        <a href="sellers.html" class="bg-pink-50 text-tutu-pink px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-pink-100 transition">
+                            <i class="fa fa-eye mr-1"></i> View
+                        </a>
+                    </td>
+                </tr>`;
+            }).join('');
+        };
+
+        loadData();
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financials - Mudalali Mama Ultra</title>
+    <title>Financials - TUTU Admin Ultra</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -13,13 +13,13 @@
 
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'ai-purple': '#8b5cf6', 'risk-red': '#ef4444' } } }
+            theme: { extend: { colors: { 'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' }, 'ai-purple': '#8b5cf6', 'risk-red': '#ef4444' } } }
         }
     </script>
     <style>
-        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
-        .tab-btn { @apply px-6 py-2 font-bold text-gray-500 border-b-2 border-transparent hover:text-mudalali-green transition-all; }
-        .tab-btn.active { @apply text-mudalali-green border-mudalali-green; }
+        .sidebar-link.active { @apply bg-tutu-pink text-white shadow-md; }
+        .tab-btn { @apply px-6 py-2 font-bold text-gray-500 border-b-2 border-transparent hover:text-tutu-pink transition-all; }
+        .tab-btn.active { @apply text-tutu-pink border-tutu-pink; }
         .scanning-bar { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: #00ff00; box-shadow: 0 0 10px #00ff00; animation: scan 1.5s infinite linear; display: none; }
         @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
         .risk-badge { @apply bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1 border border-red-200; }
@@ -81,10 +81,10 @@
             <div class="flex gap-2 w-full md:w-auto">
                 <div class="relative flex-grow md:w-64">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fa fa-search text-gray-400"></i></span>
-                    <input type="text" id="seller-search" class="w-full py-2 pl-10 pr-4 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-mudalali-green outline-none" placeholder="Search Seller...">
+                    <input type="text" id="seller-search" class="w-full py-2 pl-10 pr-4 text-sm bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-tutu-pink outline-none" placeholder="Search Seller...">
                 </div>
                 
-                <button onclick="exportBatchPayment()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm font-bold shadow-sm" title="Download Bank CSV">
+                <button onclick="exportBatchPayment()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 text-sm font-bold shadow-sm" title="Download Bank CSV">
                     <i class="fa fa-file-csv"></i> Batch Pay
                 </button>
 
@@ -153,7 +153,7 @@
                     <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-4 hover:bg-gray-50 transition text-center cursor-pointer group bg-white">
                         <input type="file" id="slip-upload" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*">
                         <div id="slip-placeholder">
-                            <i class="fa fa-cloud-upload-alt text-3xl text-gray-400 mb-1 group-hover:text-mudalali-green transition-colors"></i>
+                            <i class="fa fa-cloud-upload-alt text-3xl text-gray-400 mb-1 group-hover:text-tutu-pink transition-colors"></i>
                             <p class="text-xs text-gray-500">Click to upload Slip</p>
                         </div>
                         <div id="slip-preview-container" class="hidden relative">
@@ -167,18 +167,18 @@
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Paid Amount (LKR)</label>
-                        <input type="number" id="payout-amount" class="w-full border p-2 rounded font-bold text-right focus:outline-none focus:ring-2 focus:ring-mudalali-green">
+                        <input type="number" id="payout-amount" class="w-full border p-2 rounded font-bold text-right focus:outline-none focus:ring-2 focus:ring-tutu-pink">
                         <p id="amount-match-msg" class="text-[10px] mt-1 h-3"></p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Transaction Ref ID</label>
-                        <input type="text" id="payout-ref-id" class="w-full border p-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-mudalali-green">
+                        <input type="text" id="payout-ref-id" class="w-full border p-2 rounded text-sm focus:outline-none focus:ring-2 focus:ring-tutu-pink">
                     </div>
                 </div>
 
                 <div class="flex justify-end gap-3 pt-4 border-t">
                     <button onclick="closeModal()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg font-bold text-sm hover:bg-gray-200">Cancel</button>
-                    <button id="confirm-pay-btn" class="px-4 py-2 bg-mudalali-green text-white rounded-lg font-bold text-sm hover:bg-green-800 flex items-center gap-2" disabled>
+                    <button id="confirm-pay-btn" class="px-4 py-2 bg-tutu-pink text-white rounded-lg font-bold text-sm hover:bg-pink-800 flex items-center gap-2" disabled>
                         <i class="fa fa-check"></i> Confirm & Record
                     </button>
                 </div>
@@ -440,7 +440,7 @@
                             <td class="p-4 text-right font-bold text-red-600 text-xl">Rs. ${data.balanceDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                             <td class="p-4 text-center">
                                 ${data.balanceDue > 1 ? 
-                                    `<button onclick="openPayModal('${sid}', '${data.name}', ${data.balanceDue})" class="bg-mudalali-green text-white px-4 py-2 rounded shadow hover:bg-green-800 text-xs font-bold transition transform hover:scale-105">PAY NOW</button>` : 
+                                    `<button onclick="openPayModal('${sid}', '${data.name}', ${data.balanceDue})" class="bg-tutu-pink text-white px-4 py-2 rounded shadow hover:bg-pink-800 text-xs font-bold transition transform hover:scale-105">PAY NOW</button>` : 
                                     `<span class="text-green-600 text-xs font-bold"><i class="fa fa-check"></i> Settled</span>`
                                 }
                             </td>
@@ -652,8 +652,8 @@
 
             content.innerHTML = `
                 <div style="font-family: 'Segoe UI', sans-serif; padding: 40px; color: #333; background: white;">
-                    <div style="text-align: center; margin-bottom: 40px; border-bottom: 4px solid #3a6a4a; padding-bottom: 20px;">
-                        <h2 style="color: #3a6a4a; margin: 0 0 10px 0; font-size: 32px; font-weight: 800; text-transform: uppercase;">Weekly Payment Schedule</h2>
+                    <div style="text-align: center; margin-bottom: 40px; border-bottom: 4px solid #db2777; padding-bottom: 20px;">
+                        <h2 style="color: #db2777; margin: 0 0 10px 0; font-size: 32px; font-weight: 800; text-transform: uppercase;">Weekly Payment Schedule</h2>
                         <p style="color: #6b7280; margin: 0; font-size: 16px;">Generated on: <strong>${date}</strong></p>
                     </div>
                     <div style="background-color: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px; padding: 30px; margin-bottom: 40px; text-align: center;">
@@ -661,7 +661,7 @@
                         <h1 style="margin: 0; color: #15803d; font-size: 48px; font-weight: 900;">Rs. ${totalDue.toLocaleString(undefined, {minimumFractionDigits: 2})}</h1>
                     </div>
                     <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
-                        <thead><tr style="background-color: #3a6a4a; color: white;"><th style="padding: 18px; text-align: left; width: 30%;">Seller Name</th><th style="padding: 18px; text-align: left; width: 40%;">Bank Details</th><th style="padding: 18px; text-align: right; width: 30%;">Amount Due</th></tr></thead>
+                        <thead><tr style="background-color: #db2777; color: white;"><th style="padding: 18px; text-align: left; width: 30%;">Seller Name</th><th style="padding: 18px; text-align: left; width: 40%;">Bank Details</th><th style="padding: 18px; text-align: right; width: 30%;">Amount Due</th></tr></thead>
                         <tbody>${tableRows}</tbody>
                     </table>
                 </div>

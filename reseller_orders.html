@@ -10,11 +10,11 @@
     
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'reseller-purple': '#9333ea' } } }
+            theme: { extend: { colors: { 'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' }, 'reseller-purple': '#9333ea' } } }
         }
     </script>
     <style>
-        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .sidebar-link.active { @apply bg-tutu-pink text-white shadow-md; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -44,7 +44,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
                 <p class="text-gray-400 text-xs font-bold uppercase">Total Reseller Orders</p>
                 <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-count">0</h2>
@@ -53,9 +53,14 @@
                 <p class="text-gray-400 text-xs font-bold uppercase">Total Revenue (Cust. Pay)</p>
                 <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-volume">Rs. 0</h2>
             </div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-mudalali-green">
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-tutu-pink">
                 <p class="text-gray-400 text-xs font-bold uppercase">Wholesale Subtotal</p>
                 <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-profit">Rs. 0</h2>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                <p class="text-gray-400 text-xs font-bold uppercase">Payments</p>
+                <h2 class="text-2xl font-bold text-gray-800 mt-1" id="stat-paid">0 <span class="text-xs text-gray-400">Paid</span></h2>
+                <p class="text-xs text-red-500 font-bold mt-0.5" id="stat-unpaid">0 Unpaid</p>
             </div>
         </div>
 
@@ -74,6 +79,7 @@
                             <th class="p-4">Reseller & Customer</th>
                             <th class="p-4 text-right">Amount (LKR)</th>
                             <th class="p-4 text-center">Status</th>
+                            <th class="p-4 text-center">Payment</th>
                             <th class="p-4 text-center">Action</th>
                         </tr>
                     </thead>
@@ -198,8 +204,15 @@ async function renderResellerRow(order, tbody) {
     row.className = "border-b hover:bg-gray-50 transition group";
     row.innerHTML = `
         <td class="p-4 align-top">
-            <div class="font-bold text-gray-800 text-xs font-mono">#${order.id.slice(0,8)}</div>
+            ${order.orderRef
+                ? `<div class="font-black text-purple-700 text-xs font-mono bg-purple-50 border border-purple-200 px-2 py-1 rounded-lg inline-block">${order.orderRef}</div>
+                   <div class="text-[9px] text-gray-400 mt-0.5 font-mono">#${order.id.slice(0,8)}</div>`
+                : `<div class="font-bold text-gray-800 text-xs font-mono">#${order.id.slice(0,8)}</div>`
+            }
             <div class="text-[10px] text-gray-400 mt-1">${date}</div>
+            <button onclick="window.editOrderRef('${order.id}', '${order.orderRef || ''}')" class="mt-1.5 text-[9px] text-purple-500 hover:text-purple-700 flex items-center gap-1 font-bold transition">
+                <i class="fa fa-pen text-[8px]"></i> ${order.orderRef ? 'Edit Ref' : 'Set Ref #'}
+            </button>
         </td>
         <td class="p-4 align-top">
             <div class="space-y-1">${itemSummary}</div>
@@ -232,6 +245,17 @@ async function renderResellerRow(order, tbody) {
             </select>
         </td>
         <td class="p-4 text-center align-top">
+            ${order.paymentStatus === 'paid'
+                ? `<div class="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase">
+                       <i class="fa fa-check-circle"></i> Paid
+                       <div class="text-[9px] text-green-600 font-bold">${formatLKR(order.financials?.wholesaleSubtotal || 0)}</div>
+                   </div>`
+                : `<button onclick="window.markAsPaid('${order.id}', this)" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-sm transition flex items-center gap-1 mx-auto">
+                       <i class="fa fa-money-bill-wave"></i> Mark Paid
+                   </button>`
+            }
+        </td>
+        <td class="p-4 text-center align-top">
             <div class="flex gap-1 justify-center">
                 <button onclick="window.viewOrder('${order.id}')" class="bg-white border border-gray-200 text-gray-500 hover:text-purple-600 p-2 rounded-lg shadow-sm transition-colors"><i class="fa fa-eye"></i></button>
                 <button onclick="window.deleteOrder('${order.id}', this)" class="bg-white border border-red-100 text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg shadow-sm transition-colors"><i class="fa fa-trash"></i></button>
@@ -246,14 +270,20 @@ async function renderResellerRow(order, tbody) {
             const snap = await getDocs(collection(db, 'reseller_orders'));
             let totalRev = 0;
             let totalWholesale = 0;
+            let paidCount = 0;
+            let unpaidCount = 0;
             snap.forEach(d => {
                 const data = d.data();
                 totalRev += (data.financials?.grandTotal || 0);
                 totalWholesale += (data.financials?.wholesaleSubtotal || 0);
+                if (data.paymentStatus === 'paid') paidCount++;
+                else unpaidCount++;
             });
             document.getElementById('stat-count').innerText = snap.size;
             document.getElementById('stat-volume').innerText = formatLKR(totalRev);
             document.getElementById('stat-profit').innerText = formatLKR(totalWholesale);
+            document.getElementById('stat-paid').innerHTML = `${paidCount} <span class="text-xs text-gray-400">Paid</span>`;
+            document.getElementById('stat-unpaid').innerText = `${unpaidCount} Unpaid`;
         } catch (e) { console.error(e); }
     }
 
@@ -288,6 +318,15 @@ async function renderResellerRow(order, tbody) {
             }).join('');
 
             content.innerHTML = `
+                ${order.orderRef ? `
+                <div class="flex items-center gap-3 mb-4 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+                    <i class="fa fa-hashtag text-purple-400 text-lg"></i>
+                    <div>
+                        <p class="text-[9px] text-purple-400 font-black uppercase">Reference Number</p>
+                        <p class="text-lg font-black text-purple-700 font-mono tracking-widest">${order.orderRef}</p>
+                    </div>
+                    <div class="ml-auto text-[9px] text-gray-400 font-mono">#${id.slice(0,8)}</div>
+                </div>` : ''}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
                         <h4 class="text-[10px] font-black text-purple-400 uppercase mb-2">Customer Shipping</h4>
@@ -299,6 +338,12 @@ async function renderResellerRow(order, tbody) {
                         <h4 class="text-[10px] font-black text-blue-400 uppercase mb-2">Payment Info</h4>
                         <p class="text-sm font-bold text-blue-700">Method: ${order.method?.toUpperCase()}</p>
                         <p class="text-xs text-blue-600">Status: ${order.status}</p>
+                        <div class="mt-2 pt-2 border-t border-blue-200">
+                            ${order.paymentStatus === 'paid' 
+                                ? `<span class="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-2 py-1 rounded-lg text-[10px] font-black uppercase"><i class="fa fa-check-circle"></i> Wholesale Paid — ${formatLKR(order.financials?.wholesaleSubtotal || 0)}</span>`
+                                : `<span class="inline-flex items-center gap-1 bg-red-100 text-red-600 border border-red-200 px-2 py-1 rounded-lg text-[10px] font-black uppercase"><i class="fa fa-clock"></i> Wholesale Unpaid</span>`
+                            }
+                        </div>
                     </div>
                 </div>
 
@@ -327,6 +372,94 @@ async function renderResellerRow(order, tbody) {
             showToast(`Order marked as ${status}`, 'success'); 
             loadResellerOrders(true);
         } catch(e) { showToast('Update failed', 'error'); }
+    };
+
+    window.markAsPaid = async (id, btn) => {
+        // Get the wholesale subtotal for this order to show in confirm
+        const orderSnap = await getDoc(doc(db, 'reseller_orders', id));
+        if (!orderSnap.exists()) return;
+        const order = orderSnap.data();
+        const wholesaleAmount = order.financials?.wholesaleSubtotal || 0;
+
+        const result = await Swal.fire({
+            title: 'Mark as Paid?',
+            html: `<p class="text-gray-600 text-sm">Reseller ට ගෙවිය යුතු wholesale amount:</p>
+                   <p class="text-2xl font-black text-emerald-600 mt-2">${formatLKR(wholesaleAmount)}</p>
+                   <p class="text-xs text-gray-400 mt-1">ගෙවීම confirm කරන්නද?</p>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: '<i class="fa fa-check mr-1"></i> Yes, Mark Paid',
+            cancelButtonText: 'Cancel'
+        });
+        if (!result.isConfirmed) return;
+
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        try {
+            await updateDoc(doc(db, 'reseller_orders', id), { 
+                paymentStatus: 'paid',
+                paidAt: new Date()
+            });
+            showToast(`✅ Order marked as Paid — ${formatLKR(wholesaleAmount)}`, 'success');
+            loadResellerOrders(true);
+        } catch(e) {
+            showToast('Update failed: ' + e.message, 'error');
+            btn.innerHTML = '<i class="fa fa-money-bill-wave"></i> Mark Paid';
+            btn.disabled = false;
+        }
+    };
+
+    window.editOrderRef = async (id, currentRef) => {
+        const { value: newRef, isConfirmed } = await Swal.fire({
+            title: 'Order Reference Number',
+            html: `
+                <p class="text-gray-500 text-xs mb-3">Custom reference number set කරන්න (e.g. RSL-001, B2B-2024-05)</p>
+                <input 
+                    id="swal-ref-input"
+                    type="text" 
+                    value="${currentRef}"
+                    placeholder="e.g. RSL-001"
+                    maxlength="30"
+                    class="swal2-input w-full text-center font-mono font-bold uppercase tracking-widest"
+                    style="border: 2px solid #a855f7; border-radius: 8px; color: #7e22ce;"
+                >
+                <p style="font-size:10px; color:#9ca3af; margin-top:6px;">Original ID: #${id.slice(0,8)}</p>
+            `,
+            showCancelButton: true,
+            confirmButtonColor: '#9333ea',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: '<i class="fa fa-save"></i> Save',
+            cancelButtonText: 'Cancel',
+            focusConfirm: false,
+            didOpen: () => {
+                const input = document.getElementById('swal-ref-input');
+                if (input) { input.focus(); input.select(); }
+                input.addEventListener('input', () => {
+                    const pos = input.selectionStart;
+                    input.value = input.value.toUpperCase();
+                    input.setSelectionRange(pos, pos);
+                });
+            },
+            preConfirm: () => {
+                const val = document.getElementById('swal-ref-input').value.trim().toUpperCase();
+                if (!val) { Swal.showValidationMessage('Reference number හිස් කරන්න බෑ!'); return false; }
+                if (!/^[A-Z0-9\-_]+$/.test(val)) { Swal.showValidationMessage('Letters, numbers, - සහ _ පමණයි allowed'); return false; }
+                return val;
+            }
+        });
+
+        if (!isConfirmed || !newRef) return;
+
+        try {
+            await updateDoc(doc(db, 'reseller_orders', id), { orderRef: newRef });
+            showToast('Reference number updated: ' + newRef, 'success');
+            loadResellerOrders(true);
+        } catch(e) {
+            showToast('Update failed: ' + e.message, 'error');
+        }
     };
 
     // ── DELETE SINGLE ORDER ────────────────────────────────────

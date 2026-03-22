@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - Mudalali Mama</title>
+    <title>Settings - TUTU Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -14,13 +14,13 @@
             theme: { 
                 extend: { 
                     fontFamily: { sans: ['Poppins', 'sans-serif'] },
-                    colors: { 'mudalali-green': '#3a6a4a', 'ai-purple': '#8b5cf6' } 
+                    colors: { 'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' }, 'ai-purple': '#8b5cf6' } 
                 } 
             }
         }
     </script>
     <style>
-        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .sidebar-link.active { @apply bg-tutu-pink text-white shadow-md; }
         .radar-scan {
             position: relative;
             overflow: hidden;
@@ -36,7 +36,7 @@
         @keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
         
         /* Custom Toggle Switch Colors */
-        .peer-checked:bg-mudalali-green { background-color: #3a6a4a; }
+        .peer-checked:bg-pink-600 { background-color: #db2777; }
         .peer-checked:bg-blue-600 { background-color: #2563eb; }
         .peer-checked:bg-orange-500 { background-color: #f97316; }
     </style>
@@ -112,7 +112,7 @@
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" id="cod-toggle" class="sr-only peer">
-                                <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-mudalali-green"></div>
+                                <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-600"></div>
                             </label>
                         </div>
 
@@ -230,7 +230,7 @@
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
-                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                    <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
                         <i class="fa fa-file-contract text-xl"></i>
                     </div>
                     <div>
@@ -244,7 +244,7 @@
                         <option value="Terms of Service">Terms of Service</option>
                         <option value="Refund Policy">Refund Policy</option>
                     </select>
-                    <button onclick="generatePolicy()" id="gen-policy-btn" class="w-full bg-green-600 text-white py-2 rounded font-bold text-sm hover:bg-green-700 flex items-center justify-center gap-2">
+                    <button onclick="generatePolicy()" id="gen-policy-btn" class="w-full bg-pink-600 text-white py-2 rounded font-bold text-sm hover:bg-pink-700 flex items-center justify-center gap-2">
                         <i class="fa fa-pen-nib"></i> Generate & Download
                     </button>
                 </div>
@@ -477,8 +477,8 @@
                 badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Mode: Emergency';
                 badge.className = "px-4 py-2 bg-red-100 rounded-full text-xs font-bold text-red-600 flex items-center gap-2";
             } else {
-                badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-green-500"></span> Mode: Operational';
-                badge.className = "px-4 py-2 bg-green-100 rounded-full text-xs font-bold text-green-600 flex items-center gap-2";
+                badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-pink-500"></span> Mode: Operational';
+                badge.className = "px-4 py-2 bg-green-100 rounded-full text-xs font-bold text-pink-600 flex items-center gap-2";
             }
         }
 
@@ -546,7 +546,7 @@
             const area = document.getElementById('maintenance-msg-area');
             const status = document.getElementById('maintenance-status-display');
             if(isMaint) { area.classList.remove('hidden'); status.textContent = "STATUS: 🔴 CLOSED"; status.className = "text-xs font-bold text-red-600 animate-pulse text-right"; }
-            else { area.classList.add('hidden'); status.textContent = "STATUS: 🟢 NORMAL"; status.className = "text-xs font-bold text-green-600 text-right"; }
+            else { area.classList.add('hidden'); status.textContent = "STATUS: 🟢 NORMAL"; status.className = "text-xs font-bold text-pink-600 text-right"; }
         }
 
         window.saveMaintenanceMessage = async () => { 

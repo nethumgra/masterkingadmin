@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campaign Manager - Mudalali Mama</title>
+    <title>Campaign Manager - TUTU Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -13,7 +13,7 @@
             theme: { 
                 extend: { 
                     colors: { 
-                        'mudalali-green': '#3a6a4a', 
+                        'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' }, 
                         'offer-red': '#ef4444', 
                         'delivery-blue': '#2563eb',
                         'purple-brand': '#7e22ce'
@@ -24,7 +24,7 @@
     </script>
     <style>
         /* Common Styles */
-        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .sidebar-link.active { @apply bg-tutu-pink text-white shadow-md; }
         
         /* Custom Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -36,7 +36,7 @@
 
         /* Campaign Item Selection Grid */
         .selection-card { @apply border rounded-lg p-2 cursor-pointer bg-white hover:shadow-md transition relative flex flex-col h-full border-gray-200; }
-        .selection-card.selected { @apply border-mudalali-green bg-green-50 ring-2 ring-green-500; }
+        .selection-card.selected { @apply border-tutu-pink bg-green-50 ring-2 ring-pink-500; }
         
         /* Promo Multi-Select Items */
         .promo-item { @apply flex items-center gap-3 p-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition border-gray-200; }
@@ -171,7 +171,7 @@
                                 <span class="text-xs font-bold text-gray-500">Selection:</span>
                                 <span class="text-sm font-bold text-offer-red"><span id="count-products">0</span> Items, <span id="count-stores">0</span> Stores</span>
                             </div>
-                            <button onclick="saveCampaign()" class="w-full bg-mudalali-green text-white font-bold py-3 rounded-lg hover:bg-green-800 shadow-md">
+                            <button onclick="saveCampaign()" class="w-full bg-tutu-pink text-white font-bold py-3 rounded-lg hover:bg-pink-800 shadow-md">
                                 <i class="fa fa-save mr-2"></i> Save Campaign
                             </button>
                         </div>
@@ -187,7 +187,7 @@
                         </div>
                         <div class="relative">
                             <i class="fa fa-search absolute left-3 top-2.5 text-gray-400"></i>
-                            <input type="text" id="selection-search" class="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none" placeholder="Search items or stores...">
+                            <input type="text" id="selection-search" class="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-pink-500 outline-none" placeholder="Search items or stores...">
                         </div>
                     </div>
                     <div id="selection-grid" class="p-4 grid grid-cols-3 gap-3 overflow-y-auto flex-grow bg-gray-50 content-start custom-scrollbar"></div>
@@ -383,7 +383,7 @@
             } catch(e) { console.error(e); }
 
             // Realtime is okay for small collections like delivery_offers
-            onSnapshot(collection(db, 'delivery_offers'), (snap) => {
+            try { const snap = await getDocs(collection(db, 'delivery_offers'));
                 const list = document.getElementById('delivery-list');
                 document.getElementById('stat-delivery').textContent = snap.size;
                 document.getElementById('badge-delivery-count').textContent = snap.size;
@@ -424,7 +424,7 @@
             // UI Toggle
             ['products', 'stores', 'requests'].forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
-                if(t === tab) btn.className = 'flex-1 py-2 text-xs font-bold rounded bg-mudalali-green text-white shadow-md transition';
+                if(t === tab) btn.className = 'flex-1 py-2 text-xs font-bold rounded bg-tutu-pink text-white shadow-md transition';
                 else btn.className = 'flex-1 py-2 text-xs font-bold rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition';
             });
 
@@ -500,7 +500,7 @@
                 div.className = `selection-card ${isSelected ? 'selected' : ''}`;
                 div.onclick = () => toggleSelection(div, d.id, type);
                 div.innerHTML = `
-                    <div class="absolute top-2 right-2 check-icon text-mudalali-green ${isSelected ? '' : 'hidden'}"><i class="fa fa-check-circle text-lg bg-white rounded-full"></i></div>
+                    <div class="absolute top-2 right-2 check-icon text-tutu-pink ${isSelected ? '' : 'hidden'}"><i class="fa fa-check-circle text-lg bg-white rounded-full"></i></div>
                     <div class="w-full h-20 bg-gray-100 rounded mb-2 overflow-hidden flex-shrink-0">
                         <img src="${d.imageUrl || d.logoUrl || 'https://placehold.co/100'}" class="w-full h-full object-cover">
                     </div>

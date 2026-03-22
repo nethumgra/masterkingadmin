@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marketing Hub - Mudalali Mama</title>
+    <title>Marketing Hub - TUTU Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'offer-red': '#ef4444', 'ai-purple': '#8b5cf6' } } }
+            theme: { extend: { colors: { 'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' }, 'offer-red': '#ef4444', 'ai-purple': '#8b5cf6' } } }
         }
     </script>
     <style>
-        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .sidebar-link.active { @apply bg-tutu-pink text-white shadow-md; }
         .banner-card { transition: all 0.3s ease; }
         .banner-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         
         .tab-btn { @apply px-4 py-2 text-sm font-semibold rounded-lg transition-colors border border-transparent; }
-        .tab-btn.active { @apply bg-mudalali-green text-white shadow-sm; }
+        .tab-btn.active { @apply bg-tutu-pink text-white shadow-sm; }
         .tab-btn.inactive { @apply text-gray-500 hover:bg-gray-100; }
         
         .file-upload-label { @apply flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition; }
@@ -77,7 +77,7 @@
                 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h3 class="font-bold text-lg text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                        <i class="fa fa-layer-group text-mudalali-green"></i> Main Sliders (Hero)
+                        <i class="fa fa-layer-group text-tutu-pink"></i> Main Sliders (Hero)
                     </h3>
                     <div id="hero-banners-list" class="space-y-4">
                         <p class="text-center text-gray-400 py-4"><i class="fa fa-spinner fa-spin"></i> Loading Hero Slots...</p>
@@ -182,6 +182,19 @@
             <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                 <input type="hidden" id="edit-slot-id">
                 <input type="hidden" id="edit-collection"> 
+
+                <!-- Active/Inactive Toggle -->
+                <div class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-200 mb-2">
+                    <div>
+                        <p class="font-semibold text-gray-700 text-sm">Banner Status</p>
+                        <p class="text-[11px] text-gray-400">Toggle to show or hide this banner on the website</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="banner-is-active" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tutu-pink"></div>
+                        <span id="toggle-label" class="ml-2 text-xs font-bold text-gray-600">Active</span>
+                    </label>
+                </div>
                 
                 <div class="flex gap-2 bg-gray-100 p-1 rounded-lg mb-2">
                     <button onclick="switchTab('pc')" id="tab-pc" class="tab-btn active w-1/2"><i class="fa fa-desktop"></i> Desktop</button>
@@ -237,7 +250,7 @@
 
             <div class="p-4 bg-gray-50 border-t flex justify-end gap-3">
                 <button onclick="closeModal('edit-banner-modal')" class="px-4 py-2 text-gray-500 font-bold text-sm">Cancel</button>
-                <button onclick="saveBannerChange()" id="btn-save-banner" class="px-6 py-2 bg-mudalali-green text-white rounded-lg font-bold hover:bg-green-800 shadow-md text-sm">Save Changes</button>
+                <button onclick="saveBannerChange()" id="btn-save-banner" class="px-6 py-2 bg-tutu-pink text-white rounded-lg font-bold hover:bg-green-800 shadow-md text-sm">Save Changes</button>
             </div>
         </div>
     </div>
@@ -372,14 +385,14 @@
     </div>
 
     <script type="module">
-        import { renderSidebar, checkAdminAuth, db } from "./common.js";
+        import { renderSidebar, checkAdminAuth, db, showToast } from "./common.js";
         import { collection, onSnapshot, addDoc, doc, updateDoc, setDoc, getDoc, getDocs, serverTimestamp, deleteDoc, query, where, documentId } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         checkAdminAuth();
         renderSidebar('marketing');
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const publicDataPath = `/artifacts/${appId}/public/data`;
+        const appId = 'default-app-id'; // Fixed
+        const publicDataPath = `artifacts/${appId}/public/data`; // No leading slash
         const siteContentPath = `${publicDataPath}/siteContent`;
         const shopBannerPath = `${publicDataPath}/shopByCategoryBanners`;
         const promoAreaPath = `${publicDataPath}/productPromoAreas`;
@@ -477,7 +490,7 @@
                     chunks.push(ids.slice(i, i + 10));
                 }
                 for(const chunk of chunks) {
-                    const q = query(collection(db, collPath), where(documentId(), 'in', chunk));
+                    const q = query(collection(db, ...collPath.split('/')), where(documentId(), 'in', chunk));
                     const snap = await getDocs(q);
                     snap.forEach(doc => { results[doc.id] = doc.data(); });
                 }
@@ -489,16 +502,24 @@
         }
 
         function renderBannerCard(container, slot, data, collectionName) {
-            const hasImage = data.imageUrl || data.imageUrl_pc || data.imageUrl_mob;
+            const hasImage = !!(data.imageUrl || data.imageUrl_pc);
+            const isActive = data.isActive !== false && hasImage;
             const displayImg = data.imageUrl_pc || data.imageUrl || 'https://placehold.co/600x200?text=Empty';
-            const statusBadge = hasImage ? 
-                `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Active</span>` : 
-                `<span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Empty</span>`;
+            
+            const statusBadge = !hasImage
+                ? `<span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase">⚠ Empty</span>`
+                : isActive
+                ? `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">● Live</span>`
+                : `<span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase">○ Inactive</span>`;
+
+            const toggleChecked = isActive ? 'checked' : '';
+            const toggleClass = isActive ? 'bg-tutu-pink' : 'bg-gray-300';
 
             const html = `
-                <div class="banner-card flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 items-center">
+                <div class="banner-card flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 items-center hover:bg-white transition">
                     <div class="w-24 h-12 bg-white rounded overflow-hidden border shadow-sm relative flex-shrink-0">
                         <img src="${displayImg}" class="w-full h-full object-cover">
+                        ${!isActive && hasImage ? '<div class="absolute inset-0 bg-black/30 flex items-center justify-center"><span class="text-white text-[8px] font-bold">OFF</span></div>' : ''}
                     </div>
                     <div class="flex-grow min-w-0">
                         <div class="flex justify-between items-center mb-1">
@@ -507,9 +528,18 @@
                         </div>
                         <p class="text-[10px] text-gray-400 truncate">${data.linkUrl || 'No link set'}</p>
                     </div>
-                    <button onclick="openEditModal('${slot.id}', '${slot.name}', '${collectionName}')" class="bg-white border hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition">
-                        Edit
-                    </button>
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <!-- Quick toggle -->
+                        <label class="relative inline-flex items-center cursor-pointer" title="${isActive ? 'Click to deactivate' : 'Click to activate'}">
+                            <input type="checkbox" ${toggleChecked} class="sr-only peer"
+                                onchange="quickToggleBanner('${slot.id}', '${collectionName}', this.checked)">
+                            <div class="w-9 h-5 ${toggleClass} peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-tutu-pink"></div>
+                        </label>
+                        <button onclick="openEditModal('${slot.id}', '${slot.name}', '${collectionName}')" 
+                            class="bg-white border hover:bg-pink-50 hover:border-tutu-pink text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition">
+                            <i class="fa fa-pen mr-1"></i> Edit
+                        </button>
+                    </div>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
@@ -536,10 +566,10 @@
         }
 
         // --- 4. CATEGORIES (IMPROVED TREE VIEW) ---
-        function loadCategories() {
+        async function loadCategories() {
             const container = document.getElementById('categories-list');
             
-            onSnapshot(collection(db, categoryPath), (snap) => {
+            try { const snap = await getDocs(collection(db, ...categoryPath.split('/')));
                 if(snap.empty) { container.innerHTML = '<div class="p-8 text-center text-gray-400 flex flex-col items-center"><i class="fa fa-folder-open text-3xl mb-2"></i><p>No categories yet.</p></div>'; return; }
                 
                 container.innerHTML = '';
@@ -586,7 +616,7 @@
                                 <div class="tree-branch-connector"></div>
                                 <div class="tree-branch-elbow"></div>
                                 
-                                <div class="flex-grow bg-gray-50 border border-gray-200 border-l-4 border-l-mudalali-green rounded p-2 flex justify-between items-center hover:bg-white transition relative z-10">
+                                <div class="flex-grow bg-gray-50 border border-gray-200 border-l-4 border-l-tutu-pink rounded p-2 flex justify-between items-center hover:bg-white transition relative z-10">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden border bg-white">
                                             <img src="${child.imageUrl || ''}" class="w-5 h-5 object-contain" onerror="this.style.display='none'">
@@ -603,13 +633,13 @@
                         container.innerHTML += `<div class="mb-4">${childrenHtml}</div>`;
                     }
                 });
-            });
+            } catch(e) { console.warn('Categories:', e); container.innerHTML = '<p class="text-gray-400 text-center py-4">Could not load categories.</p>'; }
         }
 
         // --- COUPONS ---
-        function loadCoupons() {
+        async function loadCoupons() {
             const container = document.getElementById('coupons-list');
-            onSnapshot(collection(db, couponsPath), (snap) => {
+            try { const snap = await getDocs(collection(db, ...couponsPath.split('/')));
                 if(snap.empty) { container.innerHTML = '<p class="text-gray-400 text-center text-xs py-4">No active coupons.</p>'; return; }
                 container.innerHTML = '';
                 snap.forEach(doc => {
@@ -631,20 +661,20 @@
                         </div>
                     `;
                 });
-            });
+            } catch(e) { console.warn('Coupons:', e); }
         }
 
         // --- HELPERS ---
         async function fetchDoc(path, id) {
             try {
-                const snap = await getDoc(doc(db, path, id));
+                const snap = await getDoc(doc(db, ...path.split('/'), id));
                 return snap.exists() ? snap.data() : {};
             } catch(e) { return {}; }
         }
 
         async function loadCarousels() {
             try {
-                const snap = await getDocs(collection(db, carouselPath));
+                const snap = await getDocs(collection(db, ...carouselPath.split('/')));
                 availableCarousels = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             } catch(e) { console.error(e); }
         }
@@ -708,6 +738,15 @@
             document.getElementById('edit-img-mob').value = data.imageUrl_mob || '';
             document.getElementById('edit-link').value = data.linkUrl || '';
             
+            // Load active status (default true if not set)
+            const isActive = data.isActive !== false;
+            const checkbox = document.getElementById('banner-is-active');
+            checkbox.checked = isActive;
+            document.getElementById('toggle-label').textContent = isActive ? 'Active' : 'Inactive';
+            checkbox.onchange = () => {
+                document.getElementById('toggle-label').textContent = checkbox.checked ? 'Active' : 'Inactive';
+            };
+            
             window.previewImage('pc');
             window.previewImage('mob');
             window.switchTab('pc'); 
@@ -749,11 +788,13 @@
             }
 
             const path = collName === 'siteContent' ? siteContentPath : shopBannerPath;
+            const isActive = document.getElementById('banner-is-active').checked;
             const data = {
                 imageUrl: pcUrl, 
                 imageUrl_pc: pcUrl,
                 imageUrl_mob: mobUrl || pcUrl, 
                 linkUrl: link,
+                isActive: isActive,
                 updatedAt: serverTimestamp()
             };
 
@@ -763,7 +804,7 @@
             }
 
             try {
-                await setDoc(doc(db, path, slotId), data, { merge: true });
+                await setDoc(doc(db, ...path.split('/'), slotId), data, { merge: true });
                 alert("Saved!");
                 window.closeModal('edit-banner-modal');
                 loadAllBannersOptimized(); 
@@ -814,7 +855,7 @@
                 productCarouselId: document.getElementById('promo-carousel').value,
                 updatedAt: serverTimestamp()
             };
-            await setDoc(doc(db, promoAreaPath, id), data, { merge: true });
+            await setDoc(doc(db, ...promoAreaPath.split('/'), id), data, { merge: true });
             alert("Promo Updated!");
             window.closeModal('edit-promo-modal');
             loadAllBannersOptimized();
@@ -926,9 +967,9 @@
 
             try {
                 if (id) {
-                    await updateDoc(doc(db, categoryPath, id), { ...payload, updatedAt: serverTimestamp() });
+                    await updateDoc(doc(db, ...categoryPath.split('/'), id), { ...payload, updatedAt: serverTimestamp() });
                 } else {
-                    await addDoc(collection(db, categoryPath), { ...payload, createdAt: serverTimestamp() });
+                    await addDoc(collection(db, ...categoryPath.split('/')), { ...payload, createdAt: serverTimestamp() });
                 }
                 window.closeModal('category-modal');
             } catch(e) {
@@ -941,7 +982,7 @@
         };
 
         window.deleteCategory = async (id) => {
-            if(confirm("Delete this category?")) await deleteDoc(doc(db, categoryPath, id));
+            if(confirm("Delete this category?")) await deleteDoc(doc(db, ...categoryPath.split('/'), id));
         };
 
         // --- COUPON PRODUCT SELECTION LOGIC ---
@@ -953,7 +994,7 @@
             if (allProducts.length === 0) {
                 const list = document.getElementById('product-selection-list');
                 try {
-                    const snap = await getDocs(collection(db, productsPath));
+                    const snap = await getDocs(collection(db, ...productsPath.split('/')));
                     allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                } catch(e) {
                     console.error("Full Error:", e); 
@@ -1051,7 +1092,7 @@
             
             if(!code || !percent) return alert("Code and Discount % required");
 
-            await addDoc(collection(db, couponsPath), { 
+            await addDoc(collection(db, ...couponsPath.split('/')), { 
                 code: code.toUpperCase(), 
                 discount: parseInt(percent), 
                 active: true, 
@@ -1069,7 +1110,7 @@
         };
 
         window.deleteCoupon = async (id) => {
-            if(confirm("Delete this coupon?")) await deleteDoc(doc(db, couponsPath, id));
+            if(confirm("Delete this coupon?")) await deleteDoc(doc(db, ...couponsPath.split('/'), id));
         };
 
         // --- AI GENERATOR ---
@@ -1106,8 +1147,29 @@
             const title = document.getElementById('notif-title').value;
             const body = document.getElementById('notif-body').value;
             if(!title) return alert("Title required");
-            await addDoc(collection(db, publicDataPath, "notifications"), { title, body, status: 'pending', sentAt: serverTimestamp() });
+            await addDoc(collection(db, ...publicDataPath.split('/'), "notifications"), { title, body, status: 'pending', sentAt: serverTimestamp() });
             alert("Queued!");
+        };
+
+        // Quick toggle banner active/inactive from the list card
+        window.quickToggleBanner = async (slotId, collectionName, newActive) => {
+            const path = collectionName === 'siteContent' ? siteContentPath : shopBannerPath;
+            try {
+                await setDoc(doc(db, ...path.split('/'), slotId), { 
+                    isActive: newActive, 
+                    updatedAt: serverTimestamp() 
+                }, { merge: true });
+                
+                // Show quick toast
+                const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+                Toast.fire({ icon: newActive ? 'success' : 'info', title: newActive ? 'Banner activated! ✅' : 'Banner deactivated' });
+                
+                // Refresh the banners
+                loadAllBannersOptimized();
+            } catch(e) {
+                alert('Error: ' + e.message);
+                loadAllBannersOptimized(); // reload to reset toggle state
+            }
         };
 
         init();

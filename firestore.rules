@@ -1,0 +1,171 @@
+// ============================================================
+// TUTU ADMIN - Firestore Security Rules  
+// FIXED: Removed recursive isAdmin() check on /users collection
+// ============================================================
+// HOW TO DEPLOY:
+//   Firebase Console → Firestore → Rules tab → Paste → Publish
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Helper functions ----
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isLoggedIn() && request.auth.uid == uid;
+    }
+
+    // FIXED: Read the user's OWN doc to check isAdmin
+    // This works because /users/{uid} allows isOwner() to read (no circular dependency)
+    function isAdmin() {
+      return isLoggedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAdmin', false) == true;
+    }
+
+    function isSeller() {
+      return isLoggedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isSeller', false) == true ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isReseller', false) == true
+      );
+    }
+
+    function isAffiliate() {
+      return isLoggedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('isAffiliate', false) == true;
+    }
+
+    // ============================================================
+    // USERS COLLECTION
+    // KEY FIX: Users can read their OWN doc (isOwner) without isAdmin() check
+    // This breaks the circular dependency
+    // ============================================================
+    match /users/{userId} {
+      // Any logged-in user can read their OWN profile (needed for isAdmin() to work)
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) &&
+                       request.resource.data.get('isAdmin', false) == resource.data.get('isAdmin', false) &&
+                       request.resource.data.get('role', '') == resource.data.get('role', '');
+      allow delete: if isAdmin();
+    }
+
+    // User subcollections (cart, wishlist, addresses, notifications)
+    match /users/{userId}/{subcollection}/{docId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    // ============================================================
+    // ORDERS
+    // ============================================================
+    match /orders/{orderId} {
+      allow create: if isLoggedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isLoggedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        isSeller()
+      );
+      allow update: if isAdmin() || (
+        isSeller() && resource.data.sellerId == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================
+    // PRODUCTS
+    // ============================================================
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAdmin() || isSeller();
+      allow update: if isAdmin() || (
+        isSeller() && resource.data.sellerId == request.auth.uid
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================
+    // CATEGORIES, BANNERS, STORIES (admin-managed content)
+    // ============================================================
+    match /categories/{catId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /stories/{storyId} {
+      allow read: if true;
+      allow write: if isAdmin() || isSeller();
+    }
+
+    match /offers/{offerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // AFFILIATES
+    // ============================================================
+    match /affiliates/{affiliateId} {
+      allow read: if isOwner(affiliateId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /affiliatePayouts/{payoutId} {
+      allow read: if isAdmin() || (isLoggedIn() && resource.data.affiliateId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // RESELLERS
+    // ============================================================
+    match /resellers/{resellerId} {
+      allow read: if isOwner(resellerId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /resellerOrders/{orderId} {
+      allow read: if isAdmin() || (isLoggedIn() && resource.data.resellerId == request.auth.uid);
+      allow write: if isLoggedIn();
+    }
+
+    // ============================================================
+    // LOYALTY / MARKETING
+    // ============================================================
+    match /loyaltyPoints/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /loyaltyTiers/{tierId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /campaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ============================================================
+    // ADMIN-ONLY
+    // ============================================================
+    match /siteSettings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /adminLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /financials/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

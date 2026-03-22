@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carousels & Banners - TUTU Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' },
+                        'ai-purple': '#8b5cf6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #db2777; }
+        .banner-card { transition: all 0.25s ease; }
+        .banner-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(219,39,119,0.15); }
+        .upload-zone { border: 2px dashed #fbcfe8; transition: all 0.2s; }
+        .upload-zone:hover { border-color: #db2777; background: #fdf2f8; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Carousels & Banners</h1>
+                <p class="text-sm text-gray-500">Manage home page banners and promotional slides</p>
+            </div>
+            <button onclick="openAddModal()" class="bg-tutu-pink text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:bg-tutu-pink-dark transition flex items-center gap-2">
+                <i class="fa fa-plus"></i> Add Banner
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-tutu-pink">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Banners</p>
+                <h2 class="text-3xl font-bold mt-1 text-gray-800" id="count-banners">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-green-500">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Active</p>
+                <h2 class="text-3xl font-bold mt-1 text-gray-800" id="count-active">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-gray-400">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Inactive</p>
+                <h2 class="text-3xl font-bold mt-1 text-gray-800" id="count-inactive">0</h2>
+            </div>
+        </div>
+
+        <!-- Banners Grid -->
+        <div id="banners-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="col-span-full text-center py-12 text-gray-400">
+                <i class="fas fa-spinner fa-spin text-3xl mb-3 block text-tutu-pink"></i>
+                Loading banners...
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div id="banner-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-tutu-pink to-purple-600 p-5 rounded-t-2xl flex justify-between items-center sticky top-0">
+                <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                    <i class="fa fa-image"></i>
+                    <span id="modal-title">Add Banner</span>
+                </h3>
+                <button onclick="closeModal()" class="text-white/80 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="edit-banner-id">
+
+                <!-- Image Upload -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Banner Image *</label>
+                    <div class="upload-zone rounded-xl p-6 text-center cursor-pointer" id="upload-zone" onclick="document.getElementById('img-file').click()">
+                        <div id="upload-preview-area">
+                            <i class="fa fa-cloud-upload-alt text-3xl text-pink-300 mb-2 block"></i>
+                            <p class="text-sm text-gray-500">Click to upload image</p>
+                            <p class="text-xs text-gray-400 mt-1">Recommended: 1200×400px, max 5MB</p>
+                        </div>
+                        <img id="img-preview" class="hidden w-full h-32 object-cover rounded-lg mt-2">
+                    </div>
+                    <input type="file" id="img-file" class="hidden" accept="image/*" onchange="previewImage(this)">
+                    <div class="mt-2">
+                        <label class="block text-xs font-bold text-gray-500 mb-1">Or paste image URL</label>
+                        <input type="text" id="img-url" class="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-tutu-pink" placeholder="https://...">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Title</label>
+                    <input type="text" id="banner-title" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition" placeholder="Banner headline">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Subtitle</label>
+                    <input type="text" id="banner-subtitle" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition" placeholder="Supporting text">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Button Text</label>
+                        <input type="text" id="banner-btn-text" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition" placeholder="Shop Now">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Button Link</label>
+                        <input type="text" id="banner-btn-link" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition" placeholder="/shop.html">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Display Order</label>
+                        <input type="number" id="banner-order" value="1" min="1" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Status</label>
+                        <select id="banner-status" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeModal()" class="flex-1 border-2 border-gray-200 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-50 transition">Cancel</button>
+                    <button onclick="saveBanner()" id="save-btn" class="flex-1 bg-tutu-pink text-white py-3 rounded-xl font-bold hover:bg-tutu-pink-dark transition shadow-md flex items-center justify-center gap-2">
+                        <i class="fa fa-save"></i> Save Banner
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, checkAdminAuth, renderSidebar, showToast, uploadImage } from './common.js';
+        import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('carousels');
+
+        let allBanners = [];
+
+        async function loadBanners() {
+            try {
+                const q = query(collection(db, 'banners'), orderBy('order', 'asc'));
+                const snap = await getDocs(q);
+                allBanners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch(e) {
+                const snap = await getDocs(collection(db, 'banners'));
+                allBanners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+            updateStats();
+            renderBanners();
+        }
+
+        function updateStats() {
+            document.getElementById('count-banners').textContent = allBanners.length;
+            document.getElementById('count-active').textContent = allBanners.filter(b => b.status === 'active').length;
+            document.getElementById('count-inactive').textContent = allBanners.filter(b => b.status !== 'active').length;
+        }
+
+        function renderBanners() {
+            const grid = document.getElementById('banners-grid');
+            if (allBanners.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-16 text-gray-400">
+                    <i class="fa fa-image text-5xl mb-3 block text-pink-200"></i>
+                    <p class="font-semibold">No banners yet</p>
+                    <p class="text-sm mt-1">Click "Add Banner" to create your first banner</p>
+                </div>`;
+                return;
+            }
+            grid.innerHTML = allBanners.map(b => `
+                <div class="banner-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="relative h-40 bg-gray-100">
+                        ${b.imageUrl ? `<img src="${b.imageUrl}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-gray-300"><i class="fa fa-image text-5xl"></i></div>`}
+                        <div class="absolute top-3 left-3">
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full shadow ${b.status === 'active' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'}">
+                                ${b.status === 'active' ? '● Live' : '○ Hidden'}
+                            </span>
+                        </div>
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-black/40 text-white text-xs font-bold px-2 py-1 rounded-lg backdrop-blur-sm">
+                                #${b.order || 1}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-bold text-gray-800 truncate">${b.title || 'No Title'}</h3>
+                        <p class="text-sm text-gray-500 truncate mt-0.5">${b.subtitle || 'No subtitle'}</p>
+                        ${b.btnText ? `<span class="inline-block mt-2 text-xs bg-pink-50 text-tutu-pink px-2.5 py-1 rounded-full font-semibold border border-pink-100">→ ${b.btnText}</span>` : ''}
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="editBanner('${b.id}')" class="flex-1 bg-blue-50 text-blue-600 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition">
+                                <i class="fa fa-pen mr-1"></i> Edit
+                            </button>
+                            <button onclick="toggleStatus('${b.id}', '${b.status}')" class="flex-1 ${b.status === 'active' ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100' : 'bg-green-50 text-green-600 hover:bg-green-100'} py-2 rounded-xl text-sm font-bold transition">
+                                <i class="fa ${b.status === 'active' ? 'fa-eye-slash' : 'fa-eye'} mr-1"></i> ${b.status === 'active' ? 'Hide' : 'Show'}
+                            </button>
+                            <button onclick="deleteBanner('${b.id}')" class="w-10 bg-red-50 text-red-400 rounded-xl text-sm font-bold hover:bg-red-100 transition">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.openAddModal = function() {
+            document.getElementById('modal-title').textContent = 'Add Banner';
+            document.getElementById('edit-banner-id').value = '';
+            document.getElementById('banner-title').value = '';
+            document.getElementById('banner-subtitle').value = '';
+            document.getElementById('banner-btn-text').value = '';
+            document.getElementById('banner-btn-link').value = '';
+            document.getElementById('banner-order').value = allBanners.length + 1;
+            document.getElementById('banner-status').value = 'active';
+            document.getElementById('img-url').value = '';
+            document.getElementById('img-preview').classList.add('hidden');
+            document.getElementById('upload-preview-area').classList.remove('hidden');
+            document.getElementById('banner-modal').classList.remove('hidden');
+        };
+
+        window.editBanner = function(id) {
+            const b = allBanners.find(x => x.id === id);
+            if (!b) return;
+            document.getElementById('modal-title').textContent = 'Edit Banner';
+            document.getElementById('edit-banner-id').value = id;
+            document.getElementById('banner-title').value = b.title || '';
+            document.getElementById('banner-subtitle').value = b.subtitle || '';
+            document.getElementById('banner-btn-text').value = b.btnText || '';
+            document.getElementById('banner-btn-link').value = b.btnLink || '';
+            document.getElementById('banner-order').value = b.order || 1;
+            document.getElementById('banner-status').value = b.status || 'active';
+            document.getElementById('img-url').value = b.imageUrl || '';
+            if (b.imageUrl) {
+                document.getElementById('img-preview').src = b.imageUrl;
+                document.getElementById('img-preview').classList.remove('hidden');
+                document.getElementById('upload-preview-area').classList.add('hidden');
+            }
+            document.getElementById('banner-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('banner-modal').classList.add('hidden');
+        };
+
+        window.previewImage = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    document.getElementById('img-preview').src = e.target.result;
+                    document.getElementById('img-preview').classList.remove('hidden');
+                    document.getElementById('upload-preview-area').classList.add('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        window.saveBanner = async function() {
+            const id = document.getElementById('edit-banner-id').value;
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Saving...';
+
+            try {
+                let imageUrl = document.getElementById('img-url').value.trim();
+                const fileInput = document.getElementById('img-file');
+                if (fileInput.files && fileInput.files[0]) {
+                    imageUrl = await uploadImage(fileInput.files[0]);
+                }
+
+                const data = {
+                    title: document.getElementById('banner-title').value.trim(),
+                    subtitle: document.getElementById('banner-subtitle').value.trim(),
+                    btnText: document.getElementById('banner-btn-text').value.trim(),
+                    btnLink: document.getElementById('banner-btn-link').value.trim(),
+                    order: parseInt(document.getElementById('banner-order').value) || 1,
+                    status: document.getElementById('banner-status').value,
+                    imageUrl,
+                    updatedAt: serverTimestamp()
+                };
+
+                if (id) {
+                    await updateDoc(doc(db, 'banners', id), data);
+                    showToast('Banner updated!', 'success');
+                } else {
+                    data.createdAt = serverTimestamp();
+                    await addDoc(collection(db, 'banners'), data);
+                    showToast('Banner added!', 'success');
+                }
+                closeModal();
+                loadBanners();
+            } catch(e) {
+                showToast('Error: ' + e.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa fa-save"></i> Save Banner';
+            }
+        };
+
+        window.toggleStatus = async function(id, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+            await updateDoc(doc(db, 'banners', id), { status: newStatus });
+            showToast(`Banner ${newStatus === 'active' ? 'activated' : 'hidden'}!`, 'success');
+            loadBanners();
+        };
+
+        window.deleteBanner = async function(id) {
+            const result = await Swal.fire({
+                icon: 'warning', title: 'Delete Banner?', text: 'This cannot be undone.',
+                showCancelButton: true, confirmButtonColor: '#db2777',
+                confirmButtonText: 'Delete', cancelButtonText: 'Cancel'
+            });
+            if (!result.isConfirmed) return;
+            await deleteDoc(doc(db, 'banners', id));
+            showToast('Banner deleted!', 'success');
+            loadBanners();
+        };
+
+        loadBanners();
+    </script>
+</body>
+</html>

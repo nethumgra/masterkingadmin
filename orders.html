@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Manager - Mudalali Mama</title>
+    <title>Order Manager - TUTU Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'ai-purple': '#8b5cf6' } } }
+            theme: { extend: { colors: { 'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' }, 'ai-purple': '#8b5cf6' } } }
         }
     </script>
     <style>
-        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .sidebar-link.active { @apply bg-tutu-pink text-white shadow-md; }
         .badge-risk-high { @apply bg-red-100 text-red-700 border border-red-200; }
         .badge-risk-med { @apply bg-yellow-100 text-yellow-700 border border-yellow-200; }
         .badge-risk-safe { @apply bg-green-100 text-green-700 border border-green-200; }
@@ -117,7 +117,7 @@
             </div>
             
             <div id="scroll-loader" class="p-4 text-center hidden bg-gray-50 border-t">
-                <i class="fa fa-circle-notch fa-spin text-mudalali-green text-xl"></i>
+                <i class="fa fa-circle-notch fa-spin text-tutu-pink text-xl"></i>
                 <p class="text-xs text-gray-500 mt-1 font-bold">Fetching more orders...</p>
             </div>
             <div id="end-of-results" class="p-4 text-center hidden text-gray-400 text-xs italic">
@@ -303,7 +303,7 @@
                         <!-- STATUS -->
                         <td class="p-4 text-center align-top">
                             <select onchange="window.updateStatus('${o.id}', this.value)"
-                                class="px-2 py-1 rounded text-[10px] font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-green-500 ${statusColors[o.status] || 'bg-gray-100'}">
+                                class="px-2 py-1 rounded text-[10px] font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-pink-500 ${statusColors[o.status] || 'bg-gray-100'}">
                                 <option value="Pending" ${o.status === 'Pending' ? 'selected' : ''}>Pending</option>
                                 <option value="Processing" ${o.status === 'Processing' ? 'selected' : ''}>Processing</option>
                                 <option value="Shipped" ${o.status === 'Shipped' ? 'selected' : ''}>Shipped</option>
@@ -447,7 +447,7 @@
                     icon: 'success',
                     title: 'Done!',
                     html: `<p class="text-gray-600 text-sm"><strong>${deletedCount}</strong> orders successfully deleted.</p>`,
-                    confirmButtonColor: '#3a6a4a',
+                    confirmButtonColor: '#db2777',
                     customClass: { popup: 'rounded-2xl' }
                 });
 
@@ -459,7 +459,7 @@
                     icon: 'error',
                     title: 'Error!',
                     text: 'Orders delete කරන්න බැරි වුණා. Try again.',
-                    confirmButtonColor: '#3a6a4a'
+                    confirmButtonColor: '#db2777'
                 });
             }
         };
@@ -471,7 +471,7 @@
             if (!info) { showToast("No customer details found", "error"); return; }
 
             Swal.fire({
-                title: `<span class="text-gray-800 text-lg font-bold"><i class="fa fa-user-circle text-mudalali-green mr-2"></i>Customer Profile</span>`,
+                title: `<span class="text-gray-800 text-lg font-bold"><i class="fa fa-user-circle text-tutu-pink mr-2"></i>Customer Profile</span>`,
                 html: `
                     <div class="text-left text-sm space-y-2 p-1">
 
@@ -529,7 +529,7 @@
                     </div>
                 `,
                 confirmButtonText: 'Close',
-                confirmButtonColor: '#3a6a4a',
+                confirmButtonColor: '#db2777',
                 showCloseButton: true,
                 width: '420px',
                 customClass: {

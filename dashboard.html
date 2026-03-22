@@ -213,37 +213,41 @@
     </div>
 
     <script type="module">
-        import { renderSidebar, checkAdminAuth, db } from "./common.js";
-        import { collection, onSnapshot, query, orderBy, limit, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { renderSidebar, checkAdminAuth, db, formatLKR } from "./common.js";
+        import { collection, getDocs, query, orderBy, limit, updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         checkAdminAuth();
-        renderSidebar('dashboard'); // Ensure common.js has updated sidebar classes for 'tutu-pink'
+        renderSidebar('dashboard');
 
-        let allOrders = []; // Store orders locally for search & filter
+        let allOrders = [];
 
-        // 1. Load Orders Real-time
-        function loadOrders() {
+        // 1. Load Orders (getDocs instead of onSnapshot - avoids permission-denied on 127.0.0.1)
+        async function loadOrders() {
             const tbody = document.getElementById('recent-orders-table');
-            // Getting last 100 orders to allow better filtering
-            const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(100));
-            
-            onSnapshot(q, (snap) => {
+            tbody.innerHTML = '<tr><td class="p-6 text-center text-gray-400" colspan="7"><i class="fas fa-spinner fa-spin mr-2 text-tutu-pink"></i> Loading...</td></tr>';
+            try {
+                const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(100));
+                const snap = await getDocs(q);
                 allOrders = [];
-                if(snap.empty) {
-                    tbody.innerHTML = '<tr><td class="p-8 text-center text-gray-500" colspan="7">No orders yet.</td></tr>';
-                    return;
-                }
-
-                snap.forEach(doc => {
-                    // Add a JS Date object for easier filtering
-                    const data = doc.data();
-                    const dateObj = data.createdAt ? data.createdAt.toDate() : new Date();
-                    allOrders.push({ id: doc.id, ...data, dateObj: dateObj });
+                snap.forEach(d => {
+                    const data = d.data();
+                    allOrders.push({ id: d.id, ...data, dateObj: data.createdAt ? data.createdAt.toDate() : new Date() });
                 });
-
-                applyFilters(); // Apply existing filters if any
+                if (allOrders.length === 0) {
+                    tbody.innerHTML = '<tr><td class="p-8 text-center text-gray-400" colspan="7">No orders yet.</td></tr>';
+                }
+                applyFilters();
                 updateStats(allOrders);
-            });
+            } catch(e) {
+                console.warn('Orders load error:', e.code);
+                tbody.innerHTML = '<tr><td class="p-8 text-center text-gray-400" colspan="7">Could not load orders. Check Firestore rules.</td></tr>';
+            }
+            // Also load customers count
+            try {
+                const usersSnap = await getDocs(collection(db, 'users'));
+                const customerCount = usersSnap.docs.filter(d => !d.data().isAdmin && !d.data().isSeller).length;
+                document.getElementById('stat-customers').textContent = customerCount;
+            } catch(e) { /* silent */ }
         }
 
         // 2. Filter Logic

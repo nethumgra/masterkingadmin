@@ -557,9 +557,9 @@
         };
 
         // --- REALTIME TIMELINE ---
-        function loadTimeline() {
+        async function loadTimeline() {
             const q = query(collection(db, 'loyalty_missions'), orderBy('endTime', 'desc'), limit(30));
-            onSnapshot(q, (snap) => {
+            try { const snap = await getDocs(q);
                 const container = document.getElementById('mission-timeline');
                 container.innerHTML = '';
                 
@@ -603,9 +603,9 @@
         };
 
         // --- ANALYTICS & LOGS ---
-        function loadHistory() {
+        async function loadHistory() {
              const q = query(collection(db, 'coin_transactions'), orderBy('timestamp', 'desc'), limit(15));
-             onSnapshot(q, (snap) => {
+             try { const snap = await getDocs(q);
                 const c = document.getElementById('transaction-log'); c.innerHTML = '';
                 if(snap.empty) { c.innerHTML = '<p class="text-center text-slate-400 text-xs mt-10">No recent activity.</p>'; return; }
                 snap.forEach(doc => {

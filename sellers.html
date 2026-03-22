@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Management - Mudalali Mama</title>
+    <title>Seller Management - TUTU Admin</title>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -12,11 +12,11 @@
 
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { 'mudalali-green': '#3a6a4a', 'ai-blue': '#2563eb', 'risk-red': '#dc2626', 'magic-purple': '#9333ea' } } }
+            theme: { extend: { colors: { 'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' }, 'ai-blue': '#2563eb', 'risk-red': '#dc2626', 'magic-purple': '#9333ea' } } }
         }
     </script>
     <style>
-        .sidebar-link.active { @apply bg-mudalali-green text-white shadow-md; }
+        .sidebar-link.active { @apply bg-tutu-pink text-white shadow-md; }
         .scanner-line {
             position: absolute; width: 100%; height: 4px; background: #00ff00;
             box-shadow: 0 0 15px #00ff00; animation: scan 2s infinite linear;
@@ -68,7 +68,7 @@
             </div>
             <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
                 <p class="text-gray-500 text-xs font-bold uppercase">Loaded in View</p>
-                <h2 class="text-3xl font-bold mt-1 text-green-600" id="count-loaded">0</h2>
+                <h2 class="text-3xl font-bold mt-1 text-pink-600" id="count-loaded">0</h2>
             </div>
             <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
                 <p class="text-gray-500 text-xs font-bold uppercase">Pending / Risk</p>
@@ -76,17 +76,32 @@
             </div>
         </div>
 
+        <!-- TAB NAVIGATION -->
+        <div class="flex gap-1 mb-0 border-b-2 border-gray-200 bg-white rounded-t-xl px-4 pt-3 shadow-sm">
+            <button onclick="switchTab('sellers')" id="tab-sellers"
+                class="px-5 py-2.5 font-bold text-sm border-b-2 border-tutu-pink text-tutu-pink bg-white -mb-0.5 transition">
+                <i class="fa fa-store mr-2"></i>Manage Sellers
+            </button>
+            <button onclick="switchTab('products')" id="tab-products"
+                class="relative px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition">
+                <i class="fa fa-box-open mr-2"></i>Product Requests
+                <span id="product-req-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full items-center justify-center flex">0</span>
+            </button>
+        </div>
+
+        <!-- SELLERS PANEL -->
+        <div id="panel-sellers">
         <!-- Filters & Search -->
         <div class="bg-white p-4 rounded-t-xl border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="relative w-full md:w-96">
                 <i class="fa fa-search absolute left-3 top-3 text-gray-400"></i>
-                <input type="text" id="search-input" class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-mudalali-green outline-none" placeholder="Search loaded sellers...">
+                <input type="text" id="search-input" class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-tutu-pink outline-none" placeholder="Search loaded sellers...">
             </div>
             <select id="status-filter" class="p-2 border rounded-lg bg-gray-50 outline-none">
                 <option value="all">All Status</option>
-                <option value="active">Active ✅</option>
+                <option value="approved">Approved ✅</option>
                 <option value="pending">Pending Approval ⏳</option>
-                <option value="suspended">Suspended ⛔</option>
+                <option value="rejected">Rejected ❌</option>
             </select>
         </div>
 
@@ -96,8 +111,7 @@
                 <thead class="bg-gray-50 text-gray-700 uppercase text-xs font-bold border-b">
                     <tr>
                         <th class="p-4">Seller Info</th>
-                        <th class="p-4">Store Details</th>
-                        <th class="p-4 text-center">Score</th>
+                        <th class="p-4">Store / Shop Details</th>
                         <th class="p-4 text-center">Status</th>
                         <th class="p-4 text-center">Actions</th>
                     </tr>
@@ -113,6 +127,74 @@
                     Load Next 20 Sellers <i class="fa fa-chevron-down"></i>
                 </button>
                 <p id="end-of-list" class="text-xs text-gray-400 hidden mt-2">End of list.</p>
+            </div>
+        </div>
+
+
+        </div>
+
+        <!-- PRODUCT REQUESTS PANEL -->
+        <div id="panel-products" class="hidden">
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5 mt-2">
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-400">
+                    <p class="text-gray-400 text-xs font-bold uppercase">Pending</p>
+                    <h2 class="text-2xl font-bold text-yellow-600 mt-1" id="pr-count-pending">0</h2>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
+                    <p class="text-gray-400 text-xs font-bold uppercase">Approved</p>
+                    <h2 class="text-2xl font-bold text-green-600 mt-1" id="pr-count-approved">0</h2>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
+                    <p class="text-gray-400 text-xs font-bold uppercase">Rejected</p>
+                    <h2 class="text-2xl font-bold text-red-600 mt-1" id="pr-count-rejected">0</h2>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-tutu-pink">
+                    <p class="text-gray-400 text-xs font-bold uppercase">Total</p>
+                    <h2 class="text-2xl font-bold text-gray-800 mt-1" id="pr-count-total">0</h2>
+                </div>
+            </div>
+
+            <!-- Filter row -->
+            <div class="bg-white rounded-t-xl border-b border-gray-100 p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+                <div class="relative flex-grow max-w-sm">
+                    <i class="fa fa-search absolute left-3 top-3 text-gray-400 text-sm"></i>
+                    <input type="text" id="pr-search" placeholder="Search products or seller..."
+                        class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-tutu-pink outline-none"
+                        oninput="filterProductRequests()">
+                </div>
+                <select id="pr-status-filter" onchange="filterProductRequests()"
+                    class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-tutu-pink outline-none">
+                    <option value="all">All Status</option>
+                    <option value="pending" selected>⏳ Pending</option>
+                    <option value="approved">✅ Approved</option>
+                    <option value="rejected">❌ Rejected</option>
+                </select>
+                <button onclick="loadProductRequests()" class="bg-pink-50 text-tutu-pink border border-pink-200 px-4 py-2 rounded-xl text-sm font-bold hover:bg-pink-100 transition">
+                    <i class="fa fa-refresh mr-1"></i> Refresh
+                </button>
+            </div>
+
+            <!-- Products Table -->
+            <div class="bg-white rounded-b-xl shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-pink-50/50 text-gray-600 uppercase text-xs font-bold border-b border-pink-100">
+                            <tr>
+                                <th class="p-4">Product</th>
+                                <th class="p-4">Seller / Store</th>
+                                <th class="p-4 text-center">Price</th>
+                                <th class="p-4 text-center">Status</th>
+                                <th class="p-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-requests-table" class="divide-y divide-gray-100">
+                            <tr><td colspan="5" class="p-10 text-center text-gray-400">
+                                Click "Refresh" or switch to this tab to load product requests.
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -151,15 +233,15 @@
                     </div>
                     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                         <h4 class="text-xs font-bold text-gray-400 uppercase mb-3">Verification Checklist</h4>
-                        <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100"><input type="checkbox" class="w-5 h-5 text-mudalali-green rounded"> <span class="text-sm font-medium text-gray-700">Photo is clear</span></label>
-                        <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="w-5 h-5 text-mudalali-green rounded"> <span class="text-sm font-medium text-gray-700">ID matches profile</span></label>
+                        <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100"><input type="checkbox" class="w-5 h-5 text-tutu-pink rounded"> <span class="text-sm font-medium text-gray-700">Photo is clear</span></label>
+                        <label class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer"><input type="checkbox" class="w-5 h-5 text-tutu-pink rounded"> <span class="text-sm font-medium text-gray-700">ID matches profile</span></label>
                     </div>
                     <div><label class="text-xs font-bold text-gray-500 uppercase">Notes / Rejection Reason</label><textarea id="verify-notes" class="w-full mt-1 p-3 border rounded-lg text-sm h-24 bg-gray-50"></textarea></div>
                 </div>
                 <div class="p-6 border-t bg-gray-50 flex justify-end gap-3">
                     <button onclick="document.getElementById('verify-modal').classList.add('hidden')" class="px-5 py-2 text-gray-600 font-bold hover:bg-gray-200 rounded-lg">Cancel</button>
                     <button onclick="updateSellerStatus('rejected')" class="px-5 py-2 bg-red-100 text-red-600 font-bold hover:bg-red-200 rounded-lg">Reject</button>
-                    <button onclick="updateSellerStatus('approved')" class="px-5 py-2 bg-mudalali-green text-white font-bold hover:bg-green-800 rounded-lg shadow-lg">Approve</button>
+                    <button onclick="updateSellerStatus('approved')" class="px-5 py-2 bg-tutu-pink text-white font-bold hover:bg-pink-800 rounded-lg shadow-lg">Approve</button>
                 </div>
             </div>
         </div>
@@ -174,8 +256,8 @@
                 <div class="flex items-center gap-4 cursor-pointer hover:bg-gray-800 p-2 rounded-lg transition" onclick="openStoreProfileEditor()" title="Click to Edit Store Profile">
                     <div class="relative">
                         <!-- Logo will appear here only -->
-                        <img id="modal-store-img" class="w-12 h-12 rounded-full border-2 border-green-500 object-cover bg-gray-700" src="https://placehold.co/100?text=Shop" onerror="this.src='https://placehold.co/100?text=Shop'">
-                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-900 rounded-full"></span>
+                        <img id="modal-store-img" class="w-12 h-12 rounded-full border-2 border-pink-400 object-cover bg-gray-700" src="https://placehold.co/100?text=Shop" onerror="this.src='https://placehold.co/100?text=Shop'">
+                        <span class="absolute bottom-0 right-0 w-3 h-3 bg-pink-500 border-2 border-gray-900 rounded-full"></span>
                     </div>
                     <div>
                         <h2 class="text-xl font-bold flex items-center gap-2" id="modal-store-name">Loading... <i class="fa fa-pencil-alt text-xs text-gray-500"></i></h2>
@@ -192,7 +274,7 @@
                 <!-- Left: Product List -->
                 <div class="w-1/4 bg-gray-50 border-r border-gray-200 flex flex-col">
                     <div class="p-3 border-b bg-white shadow-sm z-10">
-                        <input type="text" id="prod-search" class="w-full pl-8 p-2 border rounded text-sm focus:ring-2 focus:ring-mudalali-green outline-none" placeholder="Find product...">
+                        <input type="text" id="prod-search" class="w-full pl-8 p-2 border rounded text-sm focus:ring-2 focus:ring-tutu-pink outline-none" placeholder="Find product...">
                     </div>
                     <div id="product-list-container" class="flex-grow overflow-y-auto p-2 space-y-2 custom-scrollbar">
                         <p class="text-center text-gray-500 mt-10"><i class="fa fa-spinner fa-spin"></i> Fetching...</p>
@@ -229,7 +311,7 @@
                                 <div class="w-2/3 space-y-4">
                                     <div><label class="block text-xs font-bold text-gray-500">Product Name</label><input type="text" id="edit-prod-name" class="w-full p-2 border rounded-lg font-bold"></div>
                                     <div class="grid grid-cols-3 gap-4">
-                                        <div><label class="block text-xs font-bold text-green-600">Sale Price</label><input type="number" id="edit-prod-price" class="w-full p-2 border border-green-300 bg-green-50 rounded-lg font-bold"></div>
+                                        <div><label class="block text-xs font-bold text-pink-600">Sale Price</label><input type="number" id="edit-prod-price" class="w-full p-2 border border-green-300 bg-green-50 rounded-lg font-bold"></div>
                                         <div><label class="block text-xs font-bold text-gray-500">Original Price</label><input type="number" id="edit-prod-orig-price" class="w-full p-2 border rounded-lg"></div>
                                         <div><label class="block text-xs font-bold text-red-500">Min Price</label><input type="number" id="edit-prod-min-price" class="w-full p-2 border border-red-200 bg-red-50 rounded-lg"></div>
                                     </div>
@@ -257,7 +339,7 @@
                             <button onclick="deleteProduct()" class="text-red-500 font-bold text-sm"><i class="fa fa-trash"></i> Delete</button>
                             <div class="flex gap-2">
                                 <button onclick="closeStoreModal()" class="text-gray-600 font-bold text-sm">Cancel</button>
-                                <button onclick="saveProductChanges()" id="save-prod-btn" class="bg-mudalali-green text-white px-6 py-2 rounded-lg font-bold shadow-md text-sm">Save Changes</button>
+                                <button onclick="saveProductChanges()" id="save-prod-btn" class="bg-tutu-pink text-white px-6 py-2 rounded-lg font-bold shadow-md text-sm">Save Changes</button>
                             </div>
                         </div>
                     </div>
@@ -296,7 +378,7 @@
 
                 <div>
                     <label class="block text-sm font-bold text-gray-600 mb-1">Store Name</label>
-                    <input type="text" id="edit-store-name" class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-mudalali-green">
+                    <input type="text" id="edit-store-name" class="w-full border p-2 rounded-lg focus:ring-2 focus:ring-tutu-pink">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-600 mb-1">Location</label>
@@ -309,14 +391,14 @@
                     </div>
                     <textarea id="edit-store-desc" rows="3" class="w-full border p-2 rounded-lg text-sm"></textarea>
                 </div>
-                <button onclick="saveStoreProfile()" id="save-store-profile-btn" class="w-full bg-mudalali-green text-white py-2 rounded-lg font-bold hover:bg-green-800 shadow-md">Update Profile</button>
+                <button onclick="saveStoreProfile()" id="save-store-profile-btn" class="w-full bg-tutu-pink text-white py-2 rounded-lg font-bold hover:bg-pink-800 shadow-md">Update Profile</button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { renderSidebar, checkAdminAuth, db } from "./common.js";
-        import { collection, query, where, doc, updateDoc, getDoc, getDocs, deleteDoc, limit, startAfter, orderBy, getCountFromServer } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { collection, query, where, doc, updateDoc, getDoc, getDocs, addDoc, deleteDoc, limit, startAfter, orderBy, getCountFromServer, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         checkAdminAuth();
         renderSidebar('sellers');
@@ -358,14 +440,22 @@
         }
 
         async function fetchTotalSellerCount() {
-            try { const q = query(collection(db, "users"), where("isSeller", "==", true)); const snapshot = await getCountFromServer(q); document.getElementById('count-total-db').textContent = snapshot.data().count; } catch(e) { document.getElementById('count-total-db').textContent = "N/A"; }
+            try { const q = query(collection(db, "users"), where("role", "in", ["seller", "seller_pending", "seller_rejected"])); const snapshot = await getCountFromServer(q); document.getElementById('count-total-db').textContent = snapshot.data().count; } catch(e) { document.getElementById('count-total-db').textContent = "N/A"; }
         }
 
         async function loadInitialSellers() {
-            const tbody = document.getElementById('sellers-table-body'); tbody.innerHTML = '<tr><td colspan="5" class="p-6 text-center text-gray-400"><i class="fa fa-spinner fa-spin"></i> Loading...</td></tr>';
+            const tbody = document.getElementById('sellers-table-body'); tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-400"><i class="fa fa-spinner fa-spin"></i> Loading...</td></tr>';
             allSellers = []; lastVisibleSeller = null;
-            const q = query(collection(db, "users"), where("isSeller", "==", true), orderBy("createdAt", "desc"), limit(20));
-            await executeSellerQuery(q, true); fetchTotalSellerCount();
+            // Query by role — avoids mixing up with resellers who also have isSeller:true
+            const [snapApproved, snapPending] = await Promise.all([
+                getDocs(query(collection(db, "users"), where("role", "==", "seller"), orderBy("createdAt", "desc"), limit(50))),
+                getDocs(query(collection(db, "users"), where("role", "==", "seller_pending"), orderBy("createdAt", "desc"), limit(50)))
+            ]);
+            const seen = new Set();
+            const allDocs = [];
+            [...snapApproved.docs, ...snapPending.docs].forEach(d => { if (!seen.has(d.id)) { seen.add(d.id); allDocs.push(d); } });
+            await executeSellerQueryFromDocs(allDocs, true);
+            fetchTotalSellerCount();
         }
 
         async function loadMoreSellers() {
@@ -374,6 +464,33 @@
             const q = query(collection(db, "users"), where("isSeller", "==", true), orderBy("createdAt", "desc"), startAfter(lastVisibleSeller), limit(20));
             await executeSellerQuery(q, false);
             btn.innerHTML = 'Load Next 20 Sellers <i class="fa fa-chevron-down"></i>'; btn.disabled = false;
+        }
+
+        async function executeSellerQueryFromDocs(docs, isReset) {
+            try {
+                if (docs.length === 0) {
+                    if (isReset) document.getElementById('sellers-table-body').innerHTML = '<tr><td colspan="5" class="p-8 text-center">No sellers found.</td></tr>';
+                    document.getElementById('load-more-btn').classList.add('hidden');
+                    document.getElementById('end-of-list').classList.remove('hidden');
+                    return;
+                }
+                const newSellers = await Promise.all(docs.map(async (userDoc) => {
+                    const data = userDoc.data();
+                    const shopName = data.sellerDetails?.shopName || data.displayName || 'Unnamed Store';
+                    // Determine sellerStatus for display
+                    let sellerStatus = data.sellerStatus;
+                    if (!sellerStatus) {
+                        if (data.isSeller === true) sellerStatus = 'approved';
+                        else if (data.role === 'seller_pending' || data.wantsToBeASeller) sellerStatus = 'pending';
+                        else sellerStatus = 'pending';
+                    }
+                    return { id: userDoc.id, ...data, storeName: shopName, sellerStatus, score: 75 };
+                }));
+                if (isReset) allSellers = newSellers; else allSellers = [...allSellers, ...newSellers];
+                renderTable(allSellers); updateStats();
+                document.getElementById('load-more-btn').classList.add('hidden');
+                document.getElementById('end-of-list').classList.remove('hidden');
+            } catch(e) { console.error(e); }
         }
 
         async function executeSellerQuery(q, isReset) {
@@ -410,21 +527,24 @@
                 return matchesStatus && matchesSearch;
             });
             tbody.innerHTML = filtered.map(s => {
-                let statusBadge = s.sellerStatus === 'approved' ? `<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Active</span>` :
-                                  (s.sellerStatus === 'rejected' ? `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">Rejected</span>` : 
-                                  `<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">Pending</span>`);
+                let statusBadge = s.sellerStatus === 'approved' ? `<span class="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-bold">✅ Approved</span>` :
+                                  (s.sellerStatus === 'rejected' ? `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">❌ Rejected</span>` : 
+                                  `<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">⏳ Pending</span>`);
+                const shopName = s.sellerDetails?.shopName || s.storeName || s.displayName || 'No Shop Name';
+                const phone    = s.sellerDetails?.phone || s.phone || 'No Phone';
+                const nic      = s.sellerDetails?.nic || s.idCardNumber || '';
                 return `
                     <tr class="border-b hover:bg-gray-50 transition">
                         <td class="p-4">
-                            <div><p class="font-bold text-gray-800">${s.name}</p><p class="text-xs text-gray-500">${s.email}</p></div>
+                            <div><p class="font-bold text-gray-800">${s.name || s.email}</p><p class="text-xs text-gray-500">${s.email}</p></div>
                         </td>
-                        <td class="p-4"><p class="font-bold text-gray-700 text-sm">${s.storeName}</p><p class="text-xs text-gray-500">${s.phone || 'No Phone'}</p></td>
-                        <td class="p-4 text-center font-bold text-gray-600">${s.score}</td>
+                        <td class="p-4"><p class="font-bold text-gray-700 text-sm">${shopName}</p><p class="text-xs text-gray-500">${phone}${nic ? ' · NIC: '+nic : ''}</p></td>
                         <td class="p-4 text-center">${statusBadge}</td>
                         <td class="p-4 text-center">
-                            <div class="flex gap-2 justify-center">
-                                <button onclick="window.openVerifyModal('${s.id}')" class="bg-white border border-gray-300 px-3 py-1 rounded text-xs font-bold">Verify</button>
-                                <button onclick="window.openStoreInspector('${s.id}')" class="bg-gray-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-black"><i class="fa fa-eye"></i> Check</button>
+                            <div class="flex gap-2 justify-center flex-wrap">
+                                ${s.sellerStatus !== 'approved' ? `<button onclick="approveSeller('${s.id}')" class="bg-pink-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-pink-600">✅ Approve</button>` : ''}
+                                ${s.sellerStatus !== 'rejected' ? `<button onclick="rejectSeller('${s.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600">❌ Reject</button>` : ''}
+                                <button onclick="window.openStoreInspector('${s.id}')" class="bg-gray-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-black"><i class="fa fa-eye"></i> View</button>
                             </div>
                         </td>
                     </tr>`;
@@ -433,7 +553,13 @@
 
         function updateStats() {
             document.getElementById('count-loaded').textContent = allSellers.length;
-            document.getElementById('count-risk').textContent = allSellers.filter(s => s.score < 50 || s.sellerStatus === 'pending').length;
+            const pendingCount = allSellers.filter(s => s.sellerStatus === 'pending').length;
+            document.getElementById('count-risk').textContent = pendingCount;
+            // Update the pending button badge
+            const pendingBtn = document.querySelector('[onclick="filterSellers(\'pending\')"]');
+            if (pendingBtn) {
+                pendingBtn.innerHTML = `<i class="fa fa-clock"></i> Pending Approval ${pendingCount > 0 ? `<span class="ml-1 bg-white text-yellow-600 rounded-full px-2 text-xs font-black">${pendingCount}</span>` : ''}`;
+            }
         }
 
         window.openStoreInspector = async (uid) => {
@@ -610,7 +736,7 @@
                 updateField('edit-prod-desc', json.description);
                 updateField('edit-prod-cat', json.category);
                 status.textContent = "✨ Fixed!";
-                status.className = "text-xs text-center font-bold h-4 transition-colors text-green-600";
+                status.className = "text-xs text-center font-bold h-4 transition-colors text-pink-600";
                 document.getElementById('manual-ai-btn').classList.add('hidden');
             } catch(e) { status.textContent = "AI Error"; }
             finally { btn.disabled = false; btn.innerHTML = originalHtml; }
@@ -674,19 +800,315 @@
         window.rotateImage = () => { currentRotation += 90; document.getElementById('verify-doc-img').style.transform = `rotate(${currentRotation}deg)`; };
         window.updateSellerStatus = async (status) => {
             if(!selectedSeller) return;
-            await updateDoc(doc(db, "users", selectedSeller.id), { sellerStatus: status });
+            const isApproved = status === 'approved';
+            await updateDoc(doc(db, "users", selectedSeller.id), {
+                sellerStatus: status,
+                isSeller: isApproved,
+                role: isApproved ? 'seller' : (status === 'rejected' ? 'seller_rejected' : 'seller_pending'),
+                'sellerDetails.isApproved': isApproved,
+                updatedAt: serverTimestamp()
+            });
+            // Update local cache
+            const idx = allSellers.findIndex(s => s.id === selectedSeller.id);
+            if (idx !== -1) { allSellers[idx].sellerStatus = status; allSellers[idx].isSeller = isApproved; }
+            renderTable(allSellers);
             document.getElementById('verify-modal').classList.add('hidden');
+            alert(isApproved ? '✅ Seller approved! They can now add products.' : '❌ Seller ' + status + '.');
         };
-        window.runAIAnalysis = () => { document.getElementById('ai-result-box').classList.remove('hidden'); document.getElementById('match-verdict').textContent = "Analysing..."; setTimeout(() => { document.getElementById('match-verdict').textContent = "✅ Likely Match"; document.getElementById('match-verdict').className = "mt-3 text-center p-2 rounded-lg font-bold text-sm bg-green-100 text-green-700"; }, 1500); };
+
+        window.approveSeller = async (uid) => {
+            if (!confirm('Approve this seller?')) return;
+            await updateDoc(doc(db, "users", uid), {
+                sellerStatus: 'approved', isSeller: true, role: 'seller',
+                'sellerDetails.isApproved': true, updatedAt: serverTimestamp()
+            });
+            const idx = allSellers.findIndex(s => s.id === uid);
+            if (idx !== -1) { allSellers[idx].sellerStatus = 'approved'; allSellers[idx].isSeller = true; }
+            renderTable(allSellers);
+            alert('✅ Seller approved! They can now list products.');
+        };
+
+        window.rejectSeller = async (uid) => {
+            if (!confirm('Reject this seller application?')) return;
+            await updateDoc(doc(db, "users", uid), {
+                sellerStatus: 'rejected', isSeller: false, role: 'seller_rejected',
+                'sellerDetails.isApproved': false, updatedAt: serverTimestamp()
+            });
+            const idx = allSellers.findIndex(s => s.id === uid);
+            if (idx !== -1) { allSellers[idx].sellerStatus = 'rejected'; }
+            renderTable(allSellers);
+        };
+
+        window.runAIAnalysis = () => { document.getElementById('ai-result-box').classList.remove('hidden'); document.getElementById('match-verdict').textContent = "Analysing..."; setTimeout(() => { document.getElementById('match-verdict').textContent = "✅ Likely Match"; document.getElementById('match-verdict').className = "mt-3 text-center p-2 rounded-lg font-bold text-sm bg-pink-100 text-pink-700"; }, 1500); };
 
         window.closeStoreModal = () => document.getElementById('store-check-modal').classList.add('hidden');
         
         document.getElementById('search-input').addEventListener('input', () => renderTable(allSellers));
+        window.filterSellers = (status) => {
+            document.getElementById('status-filter').value = status;
+            renderTable(allSellers);
+        };
         document.getElementById('status-filter').addEventListener('change', () => renderTable(allSellers));
         document.getElementById('prod-search').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             renderProductList(sellerProducts.filter(p => p.name.toLowerCase().includes(term)));
         });
+
+
+        // ============================================================
+        // TAB SWITCHING
+        // ============================================================
+        window.switchTab = function(tab) {
+            const isProducts = tab === 'products';
+            
+            document.getElementById('panel-sellers').classList.toggle('hidden', isProducts);
+            document.getElementById('panel-products').classList.toggle('hidden', !isProducts);
+            
+            const tabSellers = document.getElementById('tab-sellers');
+            const tabProducts = document.getElementById('tab-products');
+            
+            if (isProducts) {
+                tabSellers.className = 'px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition';
+                tabProducts.className = 'relative px-5 py-2.5 font-bold text-sm border-b-2 border-tutu-pink text-tutu-pink bg-white -mb-0.5 transition';
+                loadProductRequests();
+            } else {
+                tabSellers.className = 'px-5 py-2.5 font-bold text-sm border-b-2 border-tutu-pink text-tutu-pink bg-white -mb-0.5 transition';
+                tabProducts.className = 'relative px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition';
+            }
+        };
+
+        // ============================================================
+        // PRODUCT REQUESTS LOADING
+        // ============================================================
+        let allProductRequests = [];
+
+        window.loadProductRequests = async function() {
+            const tbody = document.getElementById('product-requests-table');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-gray-400"><i class="fa fa-spinner fa-spin text-tutu-pink mr-2"></i> Loading product requests...</td></tr>';
+            
+            try {
+                allProductRequests = [];
+                
+                // Load from direct 'products' collection (admin-added + seller-added via products collection)
+                const directSnap = await getDocs(collection(db, 'products'));
+                directSnap.forEach(d => {
+                    allProductRequests.push({ 
+                        id: d.id, 
+                        _path: 'products',
+                        _sellerId: d.data().sellerId || null,
+                        _sellerName: d.data().storeName || d.data().sellerName || 'Admin',
+                        ...d.data() 
+                    });
+                });
+                
+                // Load from sellers' subcollections: users/{uid}/products
+                const sellersSnap = await getDocs(query(collection(db, 'users'), where('isSeller', '==', true)));
+                for (const sellerDoc of sellersSnap.docs) {
+                    try {
+                        const subSnap = await getDocs(collection(db, 'users', sellerDoc.id, 'products'));
+                        subSnap.forEach(d => {
+                            // Avoid duplicates (if product already in main collection)
+                            const exists = allProductRequests.find(p => p.id === d.id);
+                            if (!exists) {
+                                allProductRequests.push({
+                                    id: d.id,
+                                    _path: 'users/' + sellerDoc.id + '/products',
+                                    _sellerId: sellerDoc.id,
+                                    _sellerName: sellerDoc.data().storeName || sellerDoc.data().displayName || 'Unknown Seller',
+                                    ...d.data()
+                                });
+                            }
+                        });
+                    } catch(e) { /* seller may have no products subcollection */ }
+                }
+                
+                // Update stats
+                const pending  = allProductRequests.filter(p => p.isApproved === null || p.isApproved === undefined).length;
+                const approved = allProductRequests.filter(p => p.isApproved === true).length;
+                const rejected = allProductRequests.filter(p => p.isApproved === false).length;
+                
+                document.getElementById('pr-count-pending').textContent  = pending;
+                document.getElementById('pr-count-approved').textContent = approved;
+                document.getElementById('pr-count-rejected').textContent = rejected;
+                document.getElementById('pr-count-total').textContent    = allProductRequests.length;
+                
+                // Update badge
+                const badge = document.getElementById('product-req-badge');
+                if (pending > 0) {
+                    badge.textContent = pending > 99 ? '99+' : pending;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+                
+                filterProductRequests();
+                
+            } catch(e) {
+                console.error('Product requests error:', e);
+                tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-red-400"><i class="fa fa-exclamation-circle mr-2"></i> Error loading: ' + e.message + '</td></tr>';
+            }
+        };
+
+        window.filterProductRequests = function() {
+            const search = (document.getElementById('pr-search')?.value || '').toLowerCase();
+            const statusF = document.getElementById('pr-status-filter')?.value || 'all';
+            
+            let filtered = allProductRequests.filter(p => {
+                const matchSearch = !search || 
+                    (p.name || '').toLowerCase().includes(search) ||
+                    (p._sellerName || '').toLowerCase().includes(search) ||
+                    (p.category || '').toLowerCase().includes(search);
+                
+                const status = p.isApproved === true ? 'approved' : (p.isApproved === false ? 'rejected' : 'pending');
+                const matchStatus = statusF === 'all' || status === statusF;
+                
+                return matchSearch && matchStatus;
+            });
+            
+            renderProductRequests(filtered);
+        };
+
+        function renderProductRequests(items) {
+            const tbody = document.getElementById('product-requests-table');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-12 text-center text-gray-400"><i class="fa fa-box-open text-4xl block mb-3 text-pink-200"></i>No products found.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = items.map(p => {
+                const img = (p.images && p.images[0]) || p.imageUrl || p.image || 'https://placehold.co/60?text=?';
+                const status = p.isApproved === true ? 'approved' : (p.isApproved === false ? 'rejected' : 'pending');
+                const statusBadge = {
+                    approved: '<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold">✅ Approved</span>',
+                    rejected: '<span class="bg-red-100 text-red-600 px-2.5 py-1 rounded-full text-xs font-bold">❌ Rejected</span>',
+                    pending:  '<span class="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse">⏳ Pending</span>'
+                }[status];
+                
+                const price = p.price || p.sellingPrice || 0;
+                const actions = status === 'pending' ? `
+                    <div class="flex gap-2 justify-center">
+                        <button onclick="approveProduct('${p.id}', '${p._path.replace(/'/g,"\'")}', '${p._sellerId || ''}')" 
+                            class="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 transition shadow-sm">
+                            <i class="fa fa-check mr-1"></i> Approve
+                        </button>
+                        <button onclick="rejectProduct('${p.id}', '${p._path.replace(/'/g,"\'")}', '${p._sellerId || ''}')" 
+                            class="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-600 transition shadow-sm">
+                            <i class="fa fa-times mr-1"></i> Reject
+                        </button>
+                    </div>` : (status === 'approved' ? `
+                    <button onclick="rejectProduct('${p.id}', '${p._path.replace(/'/g,"\'")}', '${p._sellerId || ''}')"
+                        class="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-50 hover:text-red-500 transition">
+                        <i class="fa fa-ban mr-1"></i> Revoke
+                    </button>` : `
+                    <button onclick="approveProduct('${p.id}', '${p._path.replace(/'/g,"\'")}', '${p._sellerId || ''}')"
+                        class="bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-50 hover:text-green-600 transition">
+                        <i class="fa fa-undo mr-1"></i> Re-approve
+                    </button>`);
+                
+                return `
+                <tr class="hover:bg-pink-50/20 transition">
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${img}" class="w-14 h-14 rounded-xl object-cover border border-gray-100 shadow-sm flex-shrink-0"
+                                onerror="this.src='https://placehold.co/56?text=?'">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm leading-tight">${p.name || 'Unnamed Product'}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">${p.category || 'No category'}</p>
+                                ${p.description ? `<p class="text-xs text-gray-400 mt-0.5 truncate max-w-[200px]">${p.description}</p>` : ''}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-tutu-pink text-xs font-bold flex-shrink-0">
+                                ${(p._sellerName || 'A')[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-700 text-sm">${p._sellerName || 'Admin'}</p>
+                                <p class="text-[10px] text-gray-400 font-mono">${p._path}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-center">
+                        <p class="font-bold text-gray-800">Rs. ${Number(price).toLocaleString()}</p>
+                        ${p.originalPrice ? `<p class="text-xs text-gray-400 line-through">Rs. ${Number(p.originalPrice).toLocaleString()}</p>` : ''}
+                    </td>
+                    <td class="p-4 text-center">${statusBadge}</td>
+                    <td class="p-4 text-center">${actions}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        window.approveProduct = async function(productId, path, sellerId) {
+            try {
+                // Update in its original path
+                const pathParts = path.split('/');
+                let docRef;
+                if (pathParts.length === 1) {
+                    docRef = doc(db, path, productId);
+                } else {
+                    docRef = doc(db, ...pathParts, productId);
+                }
+                await updateDoc(docRef, { isApproved: true, approvedAt: serverTimestamp(), approvedBy: 'admin' });
+                
+                // Also copy to main 'products' collection if from seller subcollection
+                if (path.startsWith('users/')) {
+                    const productSnap = await getDoc(docRef);
+                    if (productSnap.exists()) {
+                            // Check if already in main products collection
+                        const existing = allProductRequests.find(p => p.id === productId && p._path === 'products');
+                        if (!existing) {
+                            await addDoc(collection(db, 'products'), {
+                                ...productSnap.data(),
+                                isApproved: true,
+                                sellerId: sellerId,
+                                approvedAt: serverTimestamp()
+                            });
+                        }
+                    }
+                }
+                
+                Swal.fire({ icon: 'success', title: 'Approved! ✅', text: 'Product is now live.', confirmButtonColor: '#db2777', timer: 2000, showConfirmButton: false });
+                loadProductRequests();
+            } catch(e) {
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#db2777' });
+            }
+        };
+
+        window.rejectProduct = async function(productId, path, sellerId) {
+            const result = await Swal.fire({
+                icon: 'warning',
+                title: 'Reject Product?',
+                input: 'text',
+                inputLabel: 'Reason for rejection (optional)',
+                inputPlaceholder: 'e.g. Poor image quality, wrong category...',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Reject',
+                cancelButtonText: 'Cancel'
+            });
+            if (!result.isConfirmed) return;
+            
+            try {
+                const pathParts = path.split('/');
+                let docRef;
+                if (pathParts.length === 1) {
+                    docRef = doc(db, path, productId);
+                } else {
+                    docRef = doc(db, ...pathParts, productId);
+                }
+                await updateDoc(docRef, { 
+                    isApproved: false, 
+                    rejectedAt: serverTimestamp(),
+                    rejectionReason: result.value || 'Rejected by admin'
+                });
+                
+                Swal.fire({ icon: 'info', title: 'Rejected', text: 'Product has been rejected.', confirmButtonColor: '#db2777', timer: 2000, showConfirmButton: false });
+                loadProductRequests();
+            } catch(e) {
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#db2777' });
+            }
+        };
 
         loadInitialSellers();
     </script>

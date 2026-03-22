@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stories - TUTU Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] },
+                    colors: {
+                        'tutu-pink': { DEFAULT: '#db2777', dark: '#be185d', light: '#fbcfe8' },
+                        'ai-purple': '#8b5cf6'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #db2777; }
+        .story-ring { background: linear-gradient(135deg, #db2777, #8b5cf6); padding: 2px; border-radius: 50%; }
+        .story-card { transition: all 0.2s ease; }
+        .story-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(219,39,119,0.15); }
+        .status-expired { opacity: 0.6; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <div id="sidebar-container"></div>
+
+    <main class="md:ml-64 p-8 mt-12 md:mt-0">
+
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Stories</h1>
+                <p class="text-sm text-gray-500">Manage promotional stories shown on the home page</p>
+            </div>
+            <button onclick="openAddModal()" class="bg-gradient-to-r from-tutu-pink to-purple-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-md hover:shadow-lg transition flex items-center gap-2">
+                <i class="fa fa-plus"></i> Add Story
+            </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-tutu-pink">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Stories</p>
+                <h2 class="text-3xl font-bold mt-1 text-gray-800" id="count-total">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-green-500">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Active</p>
+                <h2 class="text-3xl font-bold mt-1 text-gray-800" id="count-active">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-gray-400">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Expired</p>
+                <h2 class="text-3xl font-bold mt-1 text-gray-800" id="count-expired">0</h2>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border-l-4 border-blue-500">
+                <p class="text-gray-500 text-xs font-bold uppercase tracking-wider">Total Views</p>
+                <h2 class="text-3xl font-bold mt-1 text-gray-800" id="count-views">0</h2>
+            </div>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="flex gap-2 mb-5">
+            <button onclick="setFilter('all')" id="tab-all" class="px-4 py-2 rounded-xl text-sm font-bold bg-tutu-pink text-white shadow-sm transition">All</button>
+            <button onclick="setFilter('active')" id="tab-active" class="px-4 py-2 rounded-xl text-sm font-bold bg-white text-gray-500 border border-gray-200 hover:border-tutu-pink hover:text-tutu-pink transition">Active</button>
+            <button onclick="setFilter('expired')" id="tab-expired" class="px-4 py-2 rounded-xl text-sm font-bold bg-white text-gray-500 border border-gray-200 hover:border-tutu-pink hover:text-tutu-pink transition">Expired</button>
+        </div>
+
+        <!-- Stories Grid -->
+        <div id="stories-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+            <div class="col-span-full text-center py-12 text-gray-400">
+                <i class="fas fa-spinner fa-spin text-3xl mb-3 block text-tutu-pink"></i>
+                Loading stories...
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Add/Edit Modal -->
+    <div id="story-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-tutu-pink to-purple-600 p-5 rounded-t-2xl flex justify-between items-center sticky top-0">
+                <h3 class="text-white font-bold text-lg flex items-center gap-2">
+                    <i class="fa fa-circle-play"></i>
+                    <span id="modal-title">Add Story</span>
+                </h3>
+                <button onclick="closeModal()" class="text-white/80 hover:text-white w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="edit-story-id">
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Story Title *</label>
+                    <input type="text" id="story-title" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition" placeholder="Story headline">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Thumbnail Image *</label>
+                    <div class="flex gap-3 items-start">
+                        <div id="thumb-preview-wrap" class="story-ring flex-shrink-0 w-16 h-16">
+                            <img id="thumb-preview" src="https://placehold.co/64?text=?" class="w-full h-full rounded-full object-cover">
+                        </div>
+                        <div class="flex-grow space-y-2">
+                            <button onclick="document.getElementById('thumb-file').click()" class="w-full border-2 border-dashed border-pink-200 rounded-xl py-2 text-sm text-tutu-pink font-semibold hover:bg-pink-50 transition">
+                                <i class="fa fa-upload mr-1"></i> Upload Thumbnail
+                            </button>
+                            <input type="file" id="thumb-file" class="hidden" accept="image/*" onchange="previewThumb(this)">
+                            <input type="text" id="thumb-url" class="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-tutu-pink" placeholder="Or paste URL...">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Story Media URL</label>
+                    <input type="text" id="story-media-url" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition" placeholder="Image or video URL for story content">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Link (Optional)</label>
+                    <input type="text" id="story-link" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition" placeholder="/shop.html?category=...">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Expires At</label>
+                        <input type="datetime-local" id="story-expires" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Display Order</label>
+                        <input type="number" id="story-order" value="1" min="1" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-tutu-pink transition">
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeModal()" class="flex-1 border-2 border-gray-200 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-50 transition">Cancel</button>
+                    <button onclick="saveStory()" id="save-btn" class="flex-1 bg-gradient-to-r from-tutu-pink to-purple-600 text-white py-3 rounded-xl font-bold hover:shadow-lg transition flex items-center justify-center gap-2">
+                        <i class="fa fa-save"></i> Save Story
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, checkAdminAuth, renderSidebar, showToast, uploadImage } from './common.js';
+        import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        checkAdminAuth();
+        renderSidebar('stories');
+
+        let allStories = [];
+        let activeFilter = 'all';
+
+        async function loadStories() {
+            try {
+                const q = query(collection(db, 'stories'), orderBy('order', 'asc'));
+                const snap = await getDocs(q);
+                allStories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            } catch(e) {
+                const snap = await getDocs(collection(db, 'stories'));
+                allStories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+            updateStats();
+            renderStories();
+        }
+
+        function isExpired(story) {
+            if (!story.expiresAt) return false;
+            const expires = story.expiresAt.toDate ? story.expiresAt.toDate() : new Date(story.expiresAt);
+            return expires < new Date();
+        }
+
+        function updateStats() {
+            document.getElementById('count-total').textContent = allStories.length;
+            document.getElementById('count-active').textContent = allStories.filter(s => !isExpired(s)).length;
+            document.getElementById('count-expired').textContent = allStories.filter(s => isExpired(s)).length;
+            const totalViews = allStories.reduce((sum, s) => sum + (s.views || 0), 0);
+            document.getElementById('count-views').textContent = totalViews.toLocaleString();
+        }
+
+        function renderStories() {
+            let stories = allStories;
+            if (activeFilter === 'active') stories = allStories.filter(s => !isExpired(s));
+            if (activeFilter === 'expired') stories = allStories.filter(s => isExpired(s));
+
+            const grid = document.getElementById('stories-grid');
+            if (stories.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-16 text-gray-400">
+                    <i class="fa fa-circle-play text-5xl mb-3 block text-pink-200"></i>
+                    <p class="font-semibold">No stories found</p>
+                </div>`;
+                return;
+            }
+
+            grid.innerHTML = stories.map(s => {
+                const expired = isExpired(s);
+                return `
+                <div class="story-card ${expired ? 'status-expired' : ''} text-center">
+                    <div class="relative inline-block mx-auto mb-2">
+                        <div class="${expired ? 'ring-2 ring-gray-300' : 'story-ring'} w-20 h-20 mx-auto">
+                            <img src="${s.thumbnailUrl || 'https://placehold.co/80?text=?'}" class="w-full h-full rounded-full object-cover" onerror="this.src='https://placehold.co/80?text=?'">
+                        </div>
+                        ${expired ? '<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-gray-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Expired</span>' : '<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">Live</span>'}
+                    </div>
+                    <p class="text-xs font-bold text-gray-700 truncate max-w-[80px] mx-auto mt-2">${s.title || 'Story'}</p>
+                    <p class="text-[10px] text-gray-400">${s.views || 0} views</p>
+                    <div class="flex justify-center gap-1 mt-2">
+                        <button onclick="editStory('${s.id}')" class="w-7 h-7 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-100 transition text-xs">
+                            <i class="fa fa-pen"></i>
+                        </button>
+                        <button onclick="deleteStory('${s.id}')" class="w-7 h-7 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 transition text-xs">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        window.setFilter = function(f) {
+            activeFilter = f;
+            ['all','active','expired'].forEach(tab => {
+                const btn = document.getElementById(`tab-${tab}`);
+                if (tab === f) {
+                    btn.className = 'px-4 py-2 rounded-xl text-sm font-bold bg-tutu-pink text-white shadow-sm transition';
+                } else {
+                    btn.className = 'px-4 py-2 rounded-xl text-sm font-bold bg-white text-gray-500 border border-gray-200 hover:border-tutu-pink hover:text-tutu-pink transition';
+                }
+            });
+            renderStories();
+        };
+
+        window.openAddModal = function() {
+            document.getElementById('modal-title').textContent = 'Add Story';
+            document.getElementById('edit-story-id').value = '';
+            document.getElementById('story-title').value = '';
+            document.getElementById('thumb-url').value = '';
+            document.getElementById('story-media-url').value = '';
+            document.getElementById('story-link').value = '';
+            document.getElementById('story-order').value = allStories.length + 1;
+            document.getElementById('story-expires').value = '';
+            document.getElementById('thumb-preview').src = 'https://placehold.co/64?text=?';
+            document.getElementById('story-modal').classList.remove('hidden');
+        };
+
+        window.editStory = function(id) {
+            const s = allStories.find(x => x.id === id);
+            if (!s) return;
+            document.getElementById('modal-title').textContent = 'Edit Story';
+            document.getElementById('edit-story-id').value = id;
+            document.getElementById('story-title').value = s.title || '';
+            document.getElementById('thumb-url').value = s.thumbnailUrl || '';
+            document.getElementById('story-media-url').value = s.mediaUrl || '';
+            document.getElementById('story-link').value = s.link || '';
+            document.getElementById('story-order').value = s.order || 1;
+            if (s.thumbnailUrl) document.getElementById('thumb-preview').src = s.thumbnailUrl;
+            if (s.expiresAt) {
+                const d = s.expiresAt.toDate ? s.expiresAt.toDate() : new Date(s.expiresAt);
+                document.getElementById('story-expires').value = d.toISOString().slice(0,16);
+            }
+            document.getElementById('story-modal').classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('story-modal').classList.add('hidden');
+        };
+
+        window.previewThumb = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => { document.getElementById('thumb-preview').src = e.target.result; };
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
+
+        window.saveStory = async function() {
+            const id = document.getElementById('edit-story-id').value;
+            const title = document.getElementById('story-title').value.trim();
+            if (!title) { showToast('Story title is required!', 'error'); return; }
+
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Saving...';
+
+            try {
+                let thumbnailUrl = document.getElementById('thumb-url').value.trim();
+                const thumbFile = document.getElementById('thumb-file');
+                if (thumbFile.files && thumbFile.files[0]) {
+                    thumbnailUrl = await uploadImage(thumbFile.files[0]);
+                }
+
+                const expiresInput = document.getElementById('story-expires').value;
+                const data = {
+                    title,
+                    thumbnailUrl,
+                    mediaUrl: document.getElementById('story-media-url').value.trim(),
+                    link: document.getElementById('story-link').value.trim(),
+                    order: parseInt(document.getElementById('story-order').value) || 1,
+                    expiresAt: expiresInput ? new Date(expiresInput) : null,
+                    updatedAt: serverTimestamp()
+                };
+
+                if (id) {
+                    await updateDoc(doc(db, 'stories', id), data);
+                    showToast('Story updated!', 'success');
+                } else {
+                    data.createdAt = serverTimestamp();
+                    data.views = 0;
+                    await addDoc(collection(db, 'stories'), data);
+                    showToast('Story added!', 'success');
+                }
+                closeModal();
+                loadStories();
+            } catch(e) {
+                showToast('Error: ' + e.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa fa-save"></i> Save Story';
+            }
+        };
+
+        window.deleteStory = async function(id) {
+            const result = await Swal.fire({
+                icon: 'warning', title: 'Delete Story?',
+                showCancelButton: true, confirmButtonColor: '#db2777',
+                confirmButtonText: 'Delete'
+            });
+            if (!result.isConfirmed) return;
+            await deleteDoc(doc(db, 'stories', id));
+            showToast('Story deleted!', 'success');
+            loadStories();
+        };
+
+        loadStories();
+    </script>
+</body>
+</html>
