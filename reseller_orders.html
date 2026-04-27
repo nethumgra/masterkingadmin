@@ -247,8 +247,8 @@ async function renderResellerRow(order, tbody) {
         <td class="p-4 text-center align-top">
             ${order.paymentStatus === 'paid'
                 ? `<div class="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase">
-                       <i class="fa fa-check-circle"></i> Paid
-                       <div class="text-[9px] text-green-600 font-bold">${formatLKR(order.financials?.wholesaleSubtotal || 0)}</div>
+                       <i class="fa fa-check-circle"></i> Profit Paid
+                       <div class="text-[9px] text-green-600 font-bold">${formatLKR(order.financials?.resellerProfit || 0)}</div>
                    </div>`
                 : `<button onclick="window.markAsPaid('${order.id}', this)" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-sm transition flex items-center gap-1 mx-auto">
                        <i class="fa fa-money-bill-wave"></i> Mark Paid
@@ -340,8 +340,8 @@ async function renderResellerRow(order, tbody) {
                         <p class="text-xs text-blue-600">Status: ${order.status}</p>
                         <div class="mt-2 pt-2 border-t border-blue-200">
                             ${order.paymentStatus === 'paid' 
-                                ? `<span class="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-2 py-1 rounded-lg text-[10px] font-black uppercase"><i class="fa fa-check-circle"></i> Wholesale Paid — ${formatLKR(order.financials?.wholesaleSubtotal || 0)}</span>`
-                                : `<span class="inline-flex items-center gap-1 bg-red-100 text-red-600 border border-red-200 px-2 py-1 rounded-lg text-[10px] font-black uppercase"><i class="fa fa-clock"></i> Wholesale Unpaid</span>`
+                                ? `<span class="inline-flex items-center gap-1 bg-green-100 text-green-700 border border-green-200 px-2 py-1 rounded-lg text-[10px] font-black uppercase"><i class="fa fa-check-circle"></i> Profit Paid — ${formatLKR(order.financials?.resellerProfit || 0)}</span>`
+                                : `<span class="inline-flex items-center gap-1 bg-red-100 text-red-600 border border-red-200 px-2 py-1 rounded-lg text-[10px] font-black uppercase"><i class="fa fa-clock"></i> Profit Unpaid</span>`
                             }
                         </div>
                     </div>
@@ -379,12 +379,12 @@ async function renderResellerRow(order, tbody) {
         const orderSnap = await getDoc(doc(db, 'reseller_orders', id));
         if (!orderSnap.exists()) return;
         const order = orderSnap.data();
-        const wholesaleAmount = order.financials?.wholesaleSubtotal || 0;
+        const profitAmount = order.financials?.resellerProfit || 0;
 
         const result = await Swal.fire({
             title: 'Mark as Paid?',
-            html: `<p class="text-gray-600 text-sm">Reseller ට ගෙවිය යුතු wholesale amount:</p>
-                   <p class="text-2xl font-black text-emerald-600 mt-2">${formatLKR(wholesaleAmount)}</p>
+            html: `<p class="text-gray-600 text-sm">Reseller ට ගෙවිය යුතු Profit එක:</p>
+                   <p class="text-2xl font-black text-emerald-600 mt-2">${formatLKR(profitAmount)}</p>
                    <p class="text-xs text-gray-400 mt-1">ගෙවීම confirm කරන්නද?</p>`,
             icon: 'question',
             showCancelButton: true,
@@ -403,7 +403,7 @@ async function renderResellerRow(order, tbody) {
                 paymentStatus: 'paid',
                 paidAt: new Date()
             });
-            showToast(`✅ Order marked as Paid — ${formatLKR(wholesaleAmount)}`, 'success');
+            showToast(`✅ Order marked as Paid — ${formatLKR(profitAmount)}`, 'success');
             loadResellerOrders(true);
         } catch(e) {
             showToast('Update failed: ' + e.message, 'error');

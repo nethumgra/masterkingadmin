@@ -76,7 +76,6 @@
             </div>
         </div>
 
-        <!-- TAB NAVIGATION -->
         <div class="flex gap-1 mb-0 border-b-2 border-gray-200 bg-white rounded-t-xl px-4 pt-3 shadow-sm">
             <button onclick="switchTab('sellers')" id="tab-sellers"
                 class="px-5 py-2.5 font-bold text-sm border-b-2 border-tutu-pink text-tutu-pink bg-white -mb-0.5 transition">
@@ -86,6 +85,11 @@
                 class="relative px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition">
                 <i class="fa fa-box-open mr-2"></i>Product Requests
                 <span id="product-req-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full items-center justify-center flex">0</span>
+            </button>
+            <button onclick="switchTab('withdrawals')" id="tab-withdrawals"
+                class="relative px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition">
+                <i class="fa fa-money-bill-wave mr-2"></i>Withdrawal Requests
+                <span id="wd-req-badge" class="hidden absolute -top-1 -right-1 bg-yellow-500 text-white text-[10px] font-bold w-5 h-5 rounded-full items-center justify-center flex">0</span>
             </button>
         </div>
 
@@ -164,11 +168,11 @@
                         oninput="filterProductRequests()">
                 </div>
                 <select id="pr-status-filter" onchange="filterProductRequests()"
-                    class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-tutu-pink outline-none">
+                    class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-tutu-pink outline-none font-semibold text-gray-700">
                     <option value="all">All Status</option>
-                    <option value="pending" selected>⏳ Pending</option>
-                    <option value="approved">✅ Approved</option>
-                    <option value="rejected">❌ Rejected</option>
+                    <option value="pending" selected>Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
                 </select>
                 <button onclick="loadProductRequests()" class="bg-pink-50 text-tutu-pink border border-pink-200 px-4 py-2 rounded-xl text-sm font-bold hover:bg-pink-100 transition">
                     <i class="fa fa-refresh mr-1"></i> Refresh
@@ -192,6 +196,56 @@
                             <tr><td colspan="5" class="p-10 text-center text-gray-400">
                                 Click "Refresh" or switch to this tab to load product requests.
                             </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- WITHDRAWAL REQUESTS PANEL -->
+        <div id="panel-withdrawals" class="hidden">
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5 mt-2">
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-yellow-400">
+                    <p class="text-gray-400 text-xs font-bold uppercase">Pending Requests</p>
+                    <h2 class="text-2xl font-bold text-yellow-600 mt-1" id="wd-count-pending">0</h2>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-green-500">
+                    <p class="text-gray-400 text-xs font-bold uppercase">Paid Today</p>
+                    <h2 class="text-2xl font-bold text-green-600 mt-1" id="wd-count-paid">0</h2>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-red-500">
+                    <p class="text-gray-400 text-xs font-bold uppercase">Total Rejected</p>
+                    <h2 class="text-2xl font-bold text-red-600 mt-1" id="wd-count-rejected">0</h2>
+                </div>
+            </div>
+
+            <!-- Withdrawals Table -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <select id="wd-status-filter" onchange="loadWithdrawals()" class="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-400 outline-none font-semibold text-gray-700">
+                        <option value="pending" selected>Pending</option>
+                        <option value="paid">Paid</option>
+                        <option value="rejected">Rejected</option>
+                        <option value="all">All Status</option>
+                    </select>
+                    <button onclick="loadWithdrawals()" class="bg-yellow-50 text-yellow-600 border border-yellow-200 px-4 py-2 rounded-xl text-sm font-bold hover:bg-yellow-100 transition">
+                        <i class="fa fa-refresh mr-1"></i> Refresh
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-yellow-50/50 text-gray-600 uppercase text-xs font-bold border-b border-yellow-100">
+                            <tr>
+                                <th class="p-4">Seller / Date</th>
+                                <th class="p-4">Amount</th>
+                                <th class="p-4">Bank Details</th>
+                                <th class="p-4 text-center">Status</th>
+                                <th class="p-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="withdrawals-table" class="divide-y divide-gray-100">
+                            <tr><td colspan="5" class="p-10 text-center text-gray-400">Click "Refresh" or switch to this tab to load requests.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -527,9 +581,17 @@
                 return matchesStatus && matchesSearch;
             });
             tbody.innerHTML = filtered.map(s => {
-                let statusBadge = s.sellerStatus === 'approved' ? `<span class="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-bold">✅ Approved</span>` :
-                                  (s.sellerStatus === 'rejected' ? `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">❌ Rejected</span>` : 
-                                  `<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">⏳ Pending</span>`);
+                const iCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+                const iX = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+                const iPause = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/></svg>`;
+                const iTrash = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
+                const iEye = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+                const iClock = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+
+                let statusBadge = s.sellerStatus === 'approved' ? `<span class="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1">${iCheck} Approved</span>` :
+                                  (s.sellerStatus === 'rejected' ? `<span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1">${iX} Rejected</span>` : 
+                                  (s.sellerStatus === 'held' ? `<span class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1">${iPause} On Hold</span>` : 
+                                  `<span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse inline-flex items-center gap-1">${iClock} Pending</span>`));
                 const shopName = s.sellerDetails?.shopName || s.storeName || s.displayName || 'No Shop Name';
                 const phone    = s.sellerDetails?.phone || s.phone || 'No Phone';
                 const nic      = s.sellerDetails?.nic || s.idCardNumber || '';
@@ -542,9 +604,11 @@
                         <td class="p-4 text-center">${statusBadge}</td>
                         <td class="p-4 text-center">
                             <div class="flex gap-2 justify-center flex-wrap">
-                                ${s.sellerStatus !== 'approved' ? `<button onclick="approveSeller('${s.id}')" class="bg-pink-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-pink-600">✅ Approve</button>` : ''}
-                                ${s.sellerStatus !== 'rejected' ? `<button onclick="rejectSeller('${s.id}')" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-red-600">❌ Reject</button>` : ''}
-                                <button onclick="window.openStoreInspector('${s.id}')" class="bg-gray-800 text-white px-3 py-1 rounded text-xs font-bold hover:bg-black"><i class="fa fa-eye"></i> View</button>
+                                ${s.sellerStatus !== 'approved' ? `<button onclick="approveSeller('${s.id}')" class="bg-pink-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-pink-600 inline-flex items-center gap-1 shadow-sm">${iCheck} Approve</button>` : ''}
+                                ${s.sellerStatus !== 'rejected' && s.sellerStatus !== 'held' ? `<button onclick="rejectSeller('${s.id}')" class="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-600 inline-flex items-center gap-1 shadow-sm">${iX} Reject</button>` : ''}
+                                ${s.sellerStatus === 'approved' ? `<button onclick="holdSeller('${s.id}')" class="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-orange-600 inline-flex items-center gap-1 shadow-sm">${iPause} Hold</button>` : ''}
+                                <button onclick="deleteSeller('${s.id}')" class="bg-gray-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-700 inline-flex items-center gap-1 shadow-sm">${iTrash} Delete</button>
+                                <button onclick="window.openStoreInspector('${s.id}')" class="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-black inline-flex items-center gap-1 shadow-sm">${iEye} View</button>
                             </div>
                         </td>
                     </tr>`;
@@ -600,8 +664,47 @@
             }
         }
 
+        async function compressImage(file, maxMB = 1.0) {
+            return new Promise((resolve) => {
+                const maxSize = maxMB * 1024 * 1024;
+                if (file.size <= maxSize) return resolve(file);
+
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        const MAX_DIMENSION = 1200;
+                        if (width > height && width > MAX_DIMENSION) {
+                            height *= MAX_DIMENSION / width;
+                            width = MAX_DIMENSION;
+                        } else if (height > MAX_DIMENSION) {
+                            width *= MAX_DIMENSION / height;
+                            height = MAX_DIMENSION;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        canvas.toBlob((blob) => {
+                            const newFile = new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() });
+                            resolve(newFile);
+                        }, 'image/jpeg', 0.8); 
+                    };
+                };
+            });
+        }
+
         async function uploadToImgBB(file) {
-            const d = new FormData(); d.append('image', file);
+            const compressedFile = await compressImage(file, 0.5);
+            const d = new FormData(); d.append('image', compressedFile);
             try { const r = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, { method: 'POST', body: d }); const j = await r.json(); return j.data.url; } catch(e) { return null; }
         }
 
@@ -839,6 +942,31 @@
             renderTable(allSellers);
         };
 
+        window.holdSeller = async (uid) => {
+            if (!confirm('Put this seller on hold? They will temporarily be unable to act as a seller.')) return;
+            await updateDoc(doc(db, "users", uid), {
+                sellerStatus: 'held', isSeller: false, role: 'seller_held',
+                'sellerDetails.isApproved': false, updatedAt: serverTimestamp()
+            });
+            const idx = allSellers.findIndex(s => s.id === uid);
+            if (idx !== -1) { allSellers[idx].sellerStatus = 'held'; allSellers[idx].isSeller = false; }
+            renderTable(allSellers);
+            alert('⏸️ Seller account is now on hold.');
+        };
+
+        window.deleteSeller = async (uid) => {
+            if (!confirm('⚠️ Are you sure you want to completely DELETE this seller account? This action CANNOT be undone!')) return;
+            try {
+                await deleteDoc(doc(db, "users", uid));
+                allSellers = allSellers.filter(s => s.id !== uid);
+                renderTable(allSellers);
+                updateStats();
+                alert('🗑️ Seller account deleted.');
+            } catch(e) {
+                alert('Error deleting seller: ' + e.message);
+            }
+        };
+
         window.runAIAnalysis = () => { document.getElementById('ai-result-box').classList.remove('hidden'); document.getElementById('match-verdict').textContent = "Analysing..."; setTimeout(() => { document.getElementById('match-verdict').textContent = "✅ Likely Match"; document.getElementById('match-verdict').className = "mt-3 text-center p-2 rounded-lg font-bold text-sm bg-pink-100 text-pink-700"; }, 1500); };
 
         window.closeStoreModal = () => document.getElementById('store-check-modal').classList.add('hidden');
@@ -858,23 +986,23 @@
         // ============================================================
         // TAB SWITCHING
         // ============================================================
-        window.switchTab = function(tab) {
-            const isProducts = tab === 'products';
-            
-            document.getElementById('panel-sellers').classList.toggle('hidden', isProducts);
-            document.getElementById('panel-products').classList.toggle('hidden', !isProducts);
-            
-            const tabSellers = document.getElementById('tab-sellers');
-            const tabProducts = document.getElementById('tab-products');
-            
-            if (isProducts) {
-                tabSellers.className = 'px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition';
-                tabProducts.className = 'relative px-5 py-2.5 font-bold text-sm border-b-2 border-tutu-pink text-tutu-pink bg-white -mb-0.5 transition';
-                loadProductRequests();
-            } else {
-                tabSellers.className = 'px-5 py-2.5 font-bold text-sm border-b-2 border-tutu-pink text-tutu-pink bg-white -mb-0.5 transition';
-                tabProducts.className = 'relative px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition';
-            }
+        window.switchTab = function(tabName) {
+            // Hide all panels
+            document.getElementById('panel-sellers').classList.add('hidden');
+            document.getElementById('panel-products').classList.add('hidden');
+            document.getElementById('panel-withdrawals').classList.add('hidden');
+
+            // Reset all tabs UI
+            document.getElementById('tab-sellers').className = "px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition";
+            document.getElementById('tab-products').className = "relative px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition";
+            document.getElementById('tab-withdrawals').className = "relative px-5 py-2.5 font-bold text-sm border-b-2 border-transparent text-gray-400 hover:text-tutu-pink bg-white -mb-0.5 transition";
+
+            // Show selected panel & activate tab
+            document.getElementById(`panel-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).className = "relative px-5 py-2.5 font-bold text-sm border-b-2 border-tutu-pink text-tutu-pink bg-white -mb-0.5 transition";
+
+            if (tabName === 'products') loadProductRequests();
+            if (tabName === 'withdrawals') loadWithdrawals();
         };
 
         // ============================================================
@@ -890,37 +1018,23 @@
                 allProductRequests = [];
                 
                 // Load from direct 'products' collection (admin-added + seller-added via products collection)
-                const directSnap = await getDocs(collection(db, 'products'));
+                const directSnap = await getDocs(collection(db, publicDataPath, 'products'));
                 directSnap.forEach(d => {
-                    allProductRequests.push({ 
-                        id: d.id, 
-                        _path: 'products',
-                        _sellerId: d.data().sellerId || null,
-                        _sellerName: d.data().storeName || d.data().sellerName || 'Admin',
-                        ...d.data() 
-                    });
+                    const data = d.data();
+                    // Only show products added by a seller (must have sellerUid)
+                    if (data.sellerUid) {
+                        allProductRequests.push({ 
+                            id: d.id, 
+                            _path: 'products',
+                            _sellerId: data.sellerUid,
+                            _sellerName: data.storeName || data.sellerName || 'Unknown Seller',
+                            ...data 
+                        });
+                    }
                 });
                 
-                // Load from sellers' subcollections: users/{uid}/products
-                const sellersSnap = await getDocs(query(collection(db, 'users'), where('isSeller', '==', true)));
-                for (const sellerDoc of sellersSnap.docs) {
-                    try {
-                        const subSnap = await getDocs(collection(db, 'users', sellerDoc.id, 'products'));
-                        subSnap.forEach(d => {
-                            // Avoid duplicates (if product already in main collection)
-                            const exists = allProductRequests.find(p => p.id === d.id);
-                            if (!exists) {
-                                allProductRequests.push({
-                                    id: d.id,
-                                    _path: 'users/' + sellerDoc.id + '/products',
-                                    _sellerId: sellerDoc.id,
-                                    _sellerName: sellerDoc.data().storeName || sellerDoc.data().displayName || 'Unknown Seller',
-                                    ...d.data()
-                                });
-                            }
-                        });
-                    } catch(e) { /* seller may have no products subcollection */ }
-                }
+                // Removed legacy users/{uid}/products query to optimize speed and prevent hangs.
+                // All products are now in publicDataPath/products with sellerUid attached.
                 
                 // Update stats
                 const pending  = allProductRequests.filter(p => p.isApproved === null || p.isApproved === undefined).length;
@@ -978,10 +1092,15 @@
             tbody.innerHTML = items.map(p => {
                 const img = (p.images && p.images[0]) || p.imageUrl || p.image || 'https://placehold.co/60?text=?';
                 const status = p.isApproved === true ? 'approved' : (p.isApproved === false ? 'rejected' : 'pending');
+                
+                const iCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M20 6 9 17l-5-5"/></svg>`;
+                const iX = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+                const iClock = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+                
                 const statusBadge = {
-                    approved: '<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold">✅ Approved</span>',
-                    rejected: '<span class="bg-red-100 text-red-600 px-2.5 py-1 rounded-full text-xs font-bold">❌ Rejected</span>',
-                    pending:  '<span class="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse">⏳ Pending</span>'
+                    approved: `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center">${iCheck} Approved</span>`,
+                    rejected: `<span class="bg-red-100 text-red-600 px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center">${iX} Rejected</span>`,
+                    pending:  `<span class="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse inline-flex items-center">${iClock} Pending</span>`
                 }[status];
                 
                 const price = p.price || p.sellingPrice || 0;
@@ -1042,12 +1161,11 @@
         window.approveProduct = async function(productId, path, sellerId) {
             try {
                 // Update in its original path
-                const pathParts = path.split('/');
                 let docRef;
-                if (pathParts.length === 1) {
-                    docRef = doc(db, path, productId);
+                if (path === 'products') {
+                    docRef = doc(db, publicDataPath, 'products', productId);
                 } else {
-                    docRef = doc(db, ...pathParts, productId);
+                    docRef = doc(db, ...path.split('/'), productId);
                 }
                 await updateDoc(docRef, { isApproved: true, approvedAt: serverTimestamp(), approvedBy: 'admin' });
                 
@@ -1058,7 +1176,7 @@
                             // Check if already in main products collection
                         const existing = allProductRequests.find(p => p.id === productId && p._path === 'products');
                         if (!existing) {
-                            await addDoc(collection(db, 'products'), {
+                            await addDoc(collection(db, publicDataPath, 'products'), {
                                 ...productSnap.data(),
                                 isApproved: true,
                                 sellerId: sellerId,
@@ -1090,12 +1208,11 @@
             if (!result.isConfirmed) return;
             
             try {
-                const pathParts = path.split('/');
                 let docRef;
-                if (pathParts.length === 1) {
-                    docRef = doc(db, path, productId);
+                if (path === 'products') {
+                    docRef = doc(db, publicDataPath, 'products', productId);
                 } else {
-                    docRef = doc(db, ...pathParts, productId);
+                    docRef = doc(db, ...path.split('/'), productId);
                 }
                 await updateDoc(docRef, { 
                     isApproved: false, 
@@ -1107,6 +1224,140 @@
                 loadProductRequests();
             } catch(e) {
                 Swal.fire({ icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#db2777' });
+            }
+        };
+
+        // ==========================================
+        // WITHDRAWAL REQUESTS LOGIC
+        // ==========================================
+        let allWithdrawals = [];
+        
+        window.loadWithdrawals = async function() {
+            try {
+                const tbody = document.getElementById('withdrawals-table');
+                tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-yellow-500"><i class="fa fa-spinner fa-spin mr-2"></i>Loading requests...</td></tr>';
+                
+                const q = query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc'));
+                const snap = await getDocs(q);
+                
+                allWithdrawals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                // Update Stats
+                const pending = allWithdrawals.filter(w => w.status === 'pending').length;
+                const paid = allWithdrawals.filter(w => w.status === 'paid').length;
+                const rejected = allWithdrawals.filter(w => w.status === 'rejected').length;
+                
+                document.getElementById('wd-count-pending').textContent = pending;
+                document.getElementById('wd-count-paid').textContent = paid;
+                document.getElementById('wd-count-rejected').textContent = rejected;
+                
+                // Update badge
+                const badge = document.getElementById('wd-req-badge');
+                if (pending > 0) {
+                    badge.textContent = pending > 99 ? '99+' : pending;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+                
+                filterWithdrawals();
+                
+            } catch(e) {
+                console.error("Withdrawals load error:", e);
+                document.getElementById('withdrawals-table').innerHTML = `<tr><td colspan="5" class="p-10 text-center text-red-500">Error loading: ${e.message}</td></tr>`;
+            }
+        };
+
+        window.filterWithdrawals = function() {
+            const statusFilter = document.getElementById('wd-status-filter').value;
+            let filtered = allWithdrawals;
+            
+            if (statusFilter !== 'all') {
+                filtered = allWithdrawals.filter(w => w.status === statusFilter);
+            }
+            
+            renderWithdrawals(filtered);
+        };
+
+        function renderWithdrawals(items) {
+            const tbody = document.getElementById('withdrawals-table');
+            if (items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-gray-400">No withdrawal requests found.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = items.map(w => {
+                const date = w.createdAt?.toDate ? w.createdAt.toDate().toLocaleDateString('en-GB') : 'N/A';
+                
+                const iCheck = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M20 6 9 17l-5-5"/></svg>`;
+                const iX = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+                const iClock = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+
+                const statusColors = { 
+                    'pending': `<span class="bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse inline-flex items-center">${iClock} Pending</span>`,
+                    'paid': `<span class="bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center">${iCheck} Paid</span>`,
+                    'rejected': `<span class="bg-red-100 text-red-600 px-2.5 py-1 rounded-full text-xs font-bold inline-flex items-center">${iX} Rejected</span>`
+                };
+                const statusBadge = statusColors[w.status] || `<span class="bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full text-xs font-bold">${w.status}</span>`;
+                
+                let actions = '';
+                if (w.status === 'pending') {
+                    actions = `
+                    <div class="flex gap-2 justify-center">
+                        <button onclick="updateWithdrawalStatus('${w.id}', 'paid')" class="bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-600 transition shadow-sm"><i class="fa fa-check mr-1"></i> Mark Paid</button>
+                        <button onclick="updateWithdrawalStatus('${w.id}', 'rejected')" class="bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-600 transition shadow-sm"><i class="fa fa-times mr-1"></i> Reject</button>
+                    </div>`;
+                } else if (w.status === 'paid') {
+                    actions = `<span class="text-xs text-green-600 font-bold"><i class="fa fa-check-double"></i> Settled</span>`;
+                } else if (w.status === 'rejected') {
+                    actions = `<span class="text-xs text-red-500 font-bold"><i class="fa fa-ban"></i> Declined</span>`;
+                }
+                
+                const bankInfo = w.bankDetails ? `${sanitize(w.bankDetails.bankName)} ${w.bankDetails.branch ? '('+sanitize(w.bankDetails.branch)+')' : ''}<br><span class="text-[10px] font-mono text-gray-400">${sanitize(w.bankDetails.accountNo)}</span>` : '<span class="text-red-400">No Bank Details</span>';
+                
+                const roleBadge = w.role === 'reseller' 
+                    ? `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-bold mt-1 inline-block border border-purple-200">Reseller</span>` 
+                    : `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold mt-1 inline-block border border-blue-200">Seller</span>`;
+
+                return `
+                <tr class="hover:bg-yellow-50/20 transition">
+                    <td class="p-4">
+                        <p class="font-bold text-gray-800 text-sm">${sanitize(w.sellerName || 'Unknown Name')}</p>
+                        ${roleBadge}
+                        <p class="text-[10px] text-gray-400 font-mono mt-1">${w.sellerUid || w.resellerId || 'N/A'}</p>
+                        <p class="text-xs text-gray-400 mt-1">${date}</p>
+                    </td>
+                    <td class="p-4 font-black text-emerald-600">Rs. ${(parseFloat(w.amount)||0).toLocaleString()}</td>
+                    <td class="p-4 text-sm font-semibold">${bankInfo}</td>
+                    <td class="p-4 text-center">${statusBadge}</td>
+                    <td class="p-4 text-center">${actions}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        window.updateWithdrawalStatus = async function(id, newStatus) {
+            let confirmMsg = newStatus === 'paid' ? 'Mark this request as PAID?' : 'REJECT this request?';
+            const res = await Swal.fire({
+                title: confirmMsg,
+                text: "This action will update the seller's balance.",
+                icon: newStatus === 'paid' ? 'question' : 'warning',
+                showCancelButton: true,
+                confirmButtonColor: newStatus === 'paid' ? '#10b981' : '#ef4444',
+                confirmButtonText: 'Yes, do it!'
+            });
+            
+            if (!res.isConfirmed) return;
+            
+            try {
+                await updateDoc(doc(db, 'withdrawals', id), {
+                    status: newStatus,
+                    updatedAt: serverTimestamp(),
+                    processedBy: 'admin'
+                });
+                Swal.fire({ icon: 'success', title: 'Updated!', timer: 1500, showConfirmButton: false });
+                loadWithdrawals();
+            } catch(e) {
+                Swal.fire({ icon: 'error', title: 'Error', text: e.message });
             }
         };
 
