@@ -204,6 +204,60 @@
                 </div>
             </div>
 
+            <!-- ✅ SELLER REGISTRATION FEE & BANK ACCOUNT SETTINGS -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                    <div class="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+                        <i class="fa fa-store-alt text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Seller Registration Fee</h2>
+                        <p class="text-xs text-gray-500">Set the fee & bank account for seller onboarding</p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Registration Fee (LKR)</label>
+                        <input type="number" id="seller-reg-fee" min="0" placeholder="0 = Free" class="w-full p-2 border border-gray-300 rounded text-sm">
+                        <p class="text-[11px] text-gray-400 mt-1">Set to 0 to make registration free. If a fee is set, sellers must upload a payment slip.</p>
+                    </div>
+                    <div class="bg-pink-50 p-4 rounded-xl border border-pink-100 space-y-3">
+                        <h4 class="text-xs font-bold text-pink-700 uppercase">Bank Transfer Account</h4>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-500 mb-1">Bank Name</label>
+                            <select id="seller-fee-bank" class="w-full p-2 border border-gray-300 rounded text-sm">
+                                <option value="">Select Bank</option>
+                                <option value="Bank of Ceylon (BOC)">Bank of Ceylon (BOC)</option>
+                                <option value="People's Bank">People's Bank</option>
+                                <option value="Commercial Bank">Commercial Bank</option>
+                                <option value="Hatton National Bank (HNB)">Hatton National Bank (HNB)</option>
+                                <option value="Sampath Bank">Sampath Bank</option>
+                                <option value="Seylan Bank">Seylan Bank</option>
+                                <option value="NDB Bank">NDB Bank</option>
+                                <option value="Nations Trust Bank (NTB)">Nations Trust Bank (NTB)</option>
+                                <option value="National Savings Bank (NSB)">National Savings Bank (NSB)</option>
+                                <option value="Pan Asia Bank">Pan Asia Bank</option>
+                                <option value="DFCC Bank">DFCC Bank</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-500 mb-1">Account Number</label>
+                            <input type="text" id="seller-fee-accno" placeholder="e.g. 0012345678" class="w-full p-2 border border-gray-300 rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-500 mb-1">Account Holder Name</label>
+                            <input type="text" id="seller-fee-accname" placeholder="e.g. Pink Store (Pvt) Ltd" class="w-full p-2 border border-gray-300 rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-500 mb-1">Branch (Optional)</label>
+                            <input type="text" id="seller-fee-branch" placeholder="e.g. Colombo 03" class="w-full p-2 border border-gray-300 rounded text-sm">
+                        </div>
+                    </div>
+                    <button onclick="saveSellerFeeSettings()" class="w-full bg-pink-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-pink-700">💾 Save Seller Fee Settings</button>
+                    <p id="seller-fee-status" class="text-xs text-center font-semibold hidden"></p>
+                </div>
+            </div>
+
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
                     <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
@@ -424,6 +478,13 @@
                     container.innerHTML = ''; 
                     if (data.categoryRates) data.categoryRates.forEach(rate => addRateRow(rate.category, rate.rate));
 
+                    // ✅ Seller Registration Fee
+                    document.getElementById('seller-reg-fee').value = data.sellerRegistrationFee || 0;
+                    if (data.sellerFeeBank) document.getElementById('seller-fee-bank').value = data.sellerFeeBank;
+                    document.getElementById('seller-fee-accno').value = data.sellerFeeBankAccNo || '';
+                    document.getElementById('seller-fee-accname').value = data.sellerFeeBankAccName || '';
+                    document.getElementById('seller-fee-branch').value = data.sellerFeeBankBranch || '';
+
                     // Maintenance
                     const isMaint = data.isMaintenanceMode || false;
                     document.getElementById('maintenance-toggle').checked = isMaint;
@@ -632,6 +693,41 @@
             const k2 = document.getElementById('gemini-key-backup').value;
             const mod = document.getElementById('ai-model-select').value;
             try { await setDoc(aiConfigRef, { geminiKey: k1, geminiKeyBackup: k2, preferredModel: mod }, { merge: true }); alert("✅ Saved"); } catch(e){ alert(e.message); }
+        };
+
+        // ✅ Save Seller Registration Fee & Bank Details
+        window.saveSellerFeeSettings = async () => {
+            const btn    = document.getElementById('save-biz-btn'); // reuse existing or none
+            const status = document.getElementById('seller-fee-status');
+            const fee    = Number(document.getElementById('seller-reg-fee').value) || 0;
+            const bank   = document.getElementById('seller-fee-bank').value.trim();
+            const accNo  = document.getElementById('seller-fee-accno').value.trim();
+            const accName= document.getElementById('seller-fee-accname').value.trim();
+            const branch = document.getElementById('seller-fee-branch').value.trim();
+            if (fee > 0 && (!bank || !accNo || !accName)) {
+                status.textContent = '❌ Please fill Bank Name, Account No, and Account Name.';
+                status.className = 'text-xs text-center font-semibold text-red-600';
+                status.classList.remove('hidden');
+                return;
+            }
+            try {
+                await setDoc(platformConfigRef, {
+                    sellerRegistrationFee: fee,
+                    sellerFeeBank: bank,
+                    sellerFeeBankAccNo: accNo,
+                    sellerFeeBankAccName: accName,
+                    sellerFeeBankBranch: branch,
+                    updatedAt: serverTimestamp()
+                }, { merge: true });
+                status.textContent = `✅ Seller fee settings saved! Fee: LKR ${fee.toLocaleString()}`;
+                status.className = 'text-xs text-center font-semibold text-green-600';
+                status.classList.remove('hidden');
+                setTimeout(() => status.classList.add('hidden'), 3000);
+            } catch(e) {
+                status.textContent = '❌ Error: ' + e.message;
+                status.className = 'text-xs text-center font-semibold text-red-600';
+                status.classList.remove('hidden');
+            }
         };
 
         window.savePlatformSettings = async () => {
